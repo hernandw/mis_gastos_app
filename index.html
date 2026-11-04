@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Gastos Pro</title>
+    <title>Mis Gastos Pro - Control Financiero</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome Icons -->
@@ -22,19 +22,22 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
-                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo</p>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo JSON/CSV</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Selector de Mes/Año -->
-                <input type="month" id="filtroMes" onchange="cambiarMes()" class="bg-slate-800 text-slate-200 px-3 py-2 rounded-lg text-sm border border-slate-700 outline-none cursor-pointer">
-                <!-- Botones de Backup e Importar/Exportar -->
+                <!-- Selector de Mes -->
+                <input type="month" id="filtroMes" onchange="renderizarTodo()" class="bg-slate-800 text-slate-200 px-3 py-2 rounded-lg text-sm border border-slate-700 outline-none cursor-pointer">
+                <!-- Botones Backup / Exportar / Importar -->
                 <button onclick="exportarJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Respaldo JSON">
-                    <i class="fa-solid fa-download text-emerald-400"></i> Backup
+                    <i class="fa-solid fa-file-code text-emerald-400"></i> JSON
                 </button>
-                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Restaurar Backup">
-                    <i class="fa-solid fa-upload text-sky-400"></i> Importar
-                    <input type="file" id="inputFile" accept=".json,.csv" onchange="importarDatos(event)" class="hidden">
+                <button onclick="exportarCSV()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar CSV">
+                    <i class="fa-solid fa-file-csv text-sky-400"></i> CSV
+                </button>
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Importar Archivo">
+                    <i class="fa-solid fa-upload text-amber-400"></i> Importar
+                    <input type="file" id="inputFile" accept=".json,.csv" onchange="importarArchivo(event)" class="hidden">
                 </label>
             </div>
         </div>
@@ -43,42 +46,40 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Columna Izquierda: Resumen, Gráfico y Cuentas -->
+        <!-- Columna Izquierda: Cuentas y Gráfico de Torta -->
         <div class="lg:col-span-5 space-y-6">
             
             <!-- Estado Financiero y Cuentas -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Estado de Cuentas
+                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Cuentas y Saldos
                     </h2>
                     <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
                         <i class="fa-solid fa-plus"></i> Cuenta
                     </button>
                 </div>
                 
-                <!-- Balance general -->
                 <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800/80">
                     <div>
-                        <span class="text-xs text-slate-400 block">Total Ingresos</span>
-                        <span id="labelIngresos" class="text-emerald-400 font-bold text-lg">$0</span>
+                        <span class="text-xs text-slate-400 block">Total Ingresos Mes</span>
+                        <span id="labelIngresos" class="text-emerald-400 font-bold text-base">$0</span>
                     </div>
                     <div>
-                        <span class="text-xs text-slate-400 block">Total Gastos</span>
-                        <span id="labelGastos" class="text-rose-400 font-bold text-lg">$0</span>
+                        <span class="text-xs text-slate-400 block">Total Gastos Mes</span>
+                        <span id="labelGastos" class="text-rose-400 font-bold text-base">$0</span>
                     </div>
                 </div>
 
-                <!-- Lista de Cuentas -->
                 <div id="listaCuentas" class="space-y-2 max-h-36 overflow-y-auto pr-1">
                     <!-- Dinámico -->
                 </div>
             </div>
 
-            <!-- Gráfico de Torta -->
+            <!-- Gráfico de Torta por Categorías -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
                 <h2 class="text-base font-semibold text-white w-full mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Distribución de Gastos
+                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
                 </h2>
                 <div class="w-64 h-64 relative flex items-center justify-center">
                     <canvas id="graficoTorta"></canvas>
@@ -90,7 +91,7 @@
         <!-- Columna Derecha: Transacciones y Registro -->
         <div class="lg:col-span-7 space-y-6">
             
-            <!-- Formulario de Transacción (Ingreso o Gasto) -->
+            <!-- Formulario de Transacción con Regla de Ingresos -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-circle-plus text-emerald-400"></i> Nueva Transacción
@@ -98,7 +99,6 @@
                 
                 <form id="formTransaccion" onsubmit="agregarTransaccion(event)" class="space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <!-- Tipo: Ingreso o Gasto -->
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
                             <select id="tipoTransaccion" onchange="actualizarSelectCategorias()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
@@ -106,14 +106,12 @@
                                 <option value="ingreso">Ingreso (+)</option>
                             </select>
                         </div>
-                        <!-- Cuenta -->
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Cuenta</label>
                             <select id="cuentaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
                                 <!-- Dinámico -->
                             </select>
                         </div>
-                        <!-- Categoría -->
                         <div>
                             <div class="flex justify-between items-center mb-1">
                                 <label class="text-xs font-medium text-slate-400">Categoría</label>
@@ -127,19 +125,19 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Descripción / Título</label>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Título / Descripción</label>
                             <input type="text" id="tituloTransaccion" placeholder="Ej: Supermercado, Sueldo, Nafta..." required
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Monto ($)</label>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Monto (CLP)</label>
                             <input type="number" id="montoTransaccion" placeholder="0" step="any" min="1" required
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
                     </div>
 
                     <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10">
-                        <i class="fa-solid fa-check"></i> Guardar Transacción
+                        <i class="fa-solid fa-check"></i> Registrar Transacción
                     </button>
                 </form>
             </div>
@@ -150,9 +148,6 @@
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
                         <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
                     </h2>
-                    <div class="flex gap-2">
-                        <button onclick="exportarCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-700">Exportar CSV</button>
-                    </div>
                 </div>
 
                 <div class="overflow-x-auto max-h-80 overflow-y-auto">
@@ -181,7 +176,7 @@
     <div id="modalCuenta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Agregar Nueva Cuenta</h3>
-            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Banco, Efectivo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Bancaria, Efectivo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
             <div class="flex justify-end gap-2">
                 <button onclick="cerrarModalCuenta()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
                 <button onclick="guardarNuevaCuenta()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
@@ -201,15 +196,19 @@
         </div>
     </div>
 
-    <!-- Script de lógica de la aplicación -->
+    <!-- Lógica de la Aplicación -->
     <script>
         let datosApp = {
+            uuid: "app-gastos-local",
+            label: "Mis Gastos Pro",
+            currency: "CLP",
+            openingBalance: 0,
             cuentas: [
-                { id: '1', nombre: 'Cuenta Corriente', saldo: 0 },
-                { id: '2', nombre: 'Efectivo', saldo: 0 }
+                { id: '1', nombre: 'Cuenta Corriente' },
+                { id: '2', nombre: 'Efectivo' }
             ],
             categorias: {
-                gasto: ['Comida', 'Transporte', 'Vivienda', 'Salud', 'Estudios', 'Entretenimiento'],
+                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales'],
                 ingreso: ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
             },
             transacciones: []
@@ -218,7 +217,6 @@
         let chartInstance = null;
 
         window.onload = function() {
-            // Inicializar filtro de mes actual (YYYY-MM)
             const hoy = new Date();
             const mesStr = hoy.toISOString().slice(0, 7);
             document.getElementById('filtroMes').value = mesStr;
@@ -232,6 +230,8 @@
             if (guardado) {
                 try {
                     datosApp = JSON.parse(guardado);
+                    if (!datosApp.cuentas) datosApp.cuentas = [{ id: '1', nombre: 'Principal' }];
+                    if (!datosApp.categorias) datosApp.categorias = { gasto: ['Comida', 'Transporte'], ingreso: ['Sueldo'] };
                 } catch(e) { console.error(e); }
             }
         }
@@ -240,17 +240,12 @@
             localStorage.setItem('mis_gastos_app_data', JSON.stringify(datosApp));
         }
 
-        function cambiarMes() {
-            renderizarTodo();
-        }
-
-        // --- GESTIÓN DE CUENTAS Y CATEGORÍAS ---
         function abrirModalCuenta() { document.getElementById('modalCuenta').classList.remove('hidden'); document.getElementById('modalCuenta').classList.add('flex'); }
         function cerrarModalCuenta() { document.getElementById('modalCuenta').classList.remove('flex'); document.getElementById('modalCuenta').classList.add('hidden'); }
         function guardarNuevaCuenta() {
             const nombre = document.getElementById('nombreNuevaCuenta').value.trim();
             if (nombre) {
-                datosApp.cuentas.push({ id: Date.now().toString(), nombre, saldo: 0 });
+                datosApp.cuentas.push({ id: Date.now().toString(), nombre });
                 document.getElementById('nombreNuevaCuenta').value = '';
                 cerrarModalCuenta();
                 renderizarTodo();
@@ -291,36 +286,29 @@
             const cuentaId = document.getElementById('cuentaTransaccion').value;
             const categoria = document.getElementById('categoriaTransaccion').value;
             const titulo = document.getElementById('tituloTransaccion').value.trim();
-            const monto = parseFloat(document.getElementById('montoTransaccion').value);
+            const montoInput = parseFloat(document.getElementById('montoTransaccion').value);
 
-            // Validar regla de ingresos totales
+            // Calcular ingresos totales registrados históricos
             const ingresosTotales = datosApp.transacciones
-                .filter(t => t.tipo === 'ingreso')
-                .reduce((acc, t) => acc + t.monto, 0);
+                .filter(t => t.amount > 0)
+                .reduce((acc, t) => acc + t.amount, 0);
 
-            const gastosTotales = datosApp.transacciones
-                .filter(t => t.tipo === 'gasto')
-                .reduce((acc, t) => acc + t.monto, 0);
-
-            if (tipo === 'gasto' && ingresosTotales === 0) {
-                alert("⚠️ REGLA DE CONTROL: No tienes ningún ingreso registrado. Debes registrar al menos un ingreso antes de poder realizar gastos.");
+            if (tipo === 'gasto' && ingresosTotales <= 0) {
+                alert("⚠️ REGLA DE CONTROL ACTIVADA: No tienes ningún ingreso registrado en la aplicación. Debes registrar al menos un ingreso antes de poder realizar gastos.");
                 return;
             }
 
-            if (tipo === 'gasto' && (gastosTotales + monto > ingresosTotales)) {
-                if (!confirm("⚠️ Estás a punto de gastar más de lo que tienes ingresado en total histórico. ¿Deseas continuar de todas formas?")) {
-                    return;
-                }
-            }
+            // Guardar monto positivo para ingreso, negativo para gasto (compatible con tu JSON)
+            const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
 
             const nuevaTx = {
-                id: Date.now().toString(),
-                fecha: new Date().toISOString().split('T')[0],
-                tipo,
-                cuentaId,
-                categoria,
-                titulo,
-                monto
+                uuid: 'tx-' + Date.now(),
+                date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+                amount: amountFinal,
+                category: [categoria],
+                cuentaId: cuentaId,
+                title: titulo,
+                status: "UNRECONCILED"
             };
 
             datosApp.transacciones.push(nuevaTx);
@@ -330,17 +318,15 @@
             guardarLocalStorage();
         }
 
-        function eliminarTransaccion(id) {
-            datosApp.transacciones = datosApp.transacciones.filter(t => t.id !== id);
+        function eliminarTransaccion(uuid) {
+            datosApp.transacciones = datosApp.transacciones.filter(t => t.uuid !== uuid);
             renderizarTodo();
             guardarLocalStorage();
         }
 
-        // --- RENDERIZADO GENERAL Y GRÁFICO ---
         function renderizarTodo() {
             actualizarSelectCategorias();
-            
-            // Renderizar selector de cuentas
+
             const selectCuenta = document.getElementById('cuentaTransaccion');
             const listaCuentasDiv = document.getElementById('listaCuentas');
             selectCuenta.innerHTML = '';
@@ -349,61 +335,81 @@
             let saldosCuentas = {};
             datosApp.cuentas.forEach(c => { saldosCuentas[c.id] = 0; });
 
-            // Calcular saldos por cuenta y totales del mes seleccionado
             const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
             let ingresosMes = 0;
             let gastosMes = 0;
             let gastosPorCategoriaMes = {};
 
             datosApp.transacciones.forEach(t => {
-                // Saldos globales
-                if (t.tipo === 'ingreso') saldosCuentas[t.cuentaId] = (saldosCuentas[t.cuentaId] || 0) + t.monto;
-                if (t.tipo === 'gasto') saldosCuentas[t.cuentaId] = (saldosCuentas[t.cuentaId] || 0) - t.monto;
+                const cId = t.cuentaId || (datosApp.cuentas[0] ? datosApp.cuentas[0].id : '1');
+                if (t.amount > 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
+                if (t.amount < 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount; // suma negativo
 
-                // Filtrar por mes para la vista principal
-                if (t.fecha.startsWith(mesSeleccionado)) {
-                    if (t.tipo === 'ingreso') ingresosMes += t.monto;
-                    if (t.tipo === 'gasto') {
-                        gastosMes += t.monto;
-                        gastosPorCategoriaMes[t.categoria] = (gastosPorCategoriaMes[t.categoria] || 0) + t.monto;
+                // Parsear fecha formato DD/MM/YYYY o YYYY-MM-DD
+                let fechaIso = '';
+                if (t.date.includes('/')) {
+                    const partes = t.date.split('/');
+                    if (partes.length === 3) fechaIso = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                } else {
+                    fechaIso = t.date;
+                }
+
+                if (fechaIso.startsWith(mesSeleccionado)) {
+                    if (t.amount > 0) ingresosMes += t.amount;
+                    if (t.amount < 0) {
+                        const valGasto = Math.abs(t.amount);
+                        gastosMes += valGasto;
+                        const catPrincipal = Array.isArray(t.category) ? t.category[0] : (t.category || 'General');
+                        gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
                     }
                 }
             });
 
-            // Mostrar cuentas
+            // Renderizar cuentas
             datosApp.cuentas.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
                 opt.textContent = c.nombre;
                 selectCuenta.appendChild(opt);
 
+                const saldoCuenta = saldosCuentas[c.id] || 0;
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center text-xs bg-slate-950 px-3 py-2 rounded-lg border border-slate-800";
-                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${(saldosCuentas[c.id] || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${(saldosCuentas[c.id] || 0).toLocaleString()}</span>`;
+                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${saldoCuenta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${saldoCuenta.toLocaleString()} CLP</span>`;
                 listaCuentasDiv.appendChild(div);
             });
 
-            document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString();
-            document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString();
+            document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
+            document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Renderizar tabla del mes
+            // Renderizar tabla
             const tbody = document.getElementById('tablaTransacciones');
             tbody.innerHTML = '';
-            const txsMes = datosApp.transacciones.filter(t => t.fecha.startsWith(mesSeleccionado));
+            
+            const txsMes = datosApp.transacciones.filter(t => {
+                let fechaIso = '';
+                if (t.date.includes('/')) {
+                    const p = t.date.split('/');
+                    if (p.length === 3) fechaIso = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+                } else { fechaIso = t.date; }
+                return fechaIso.startsWith(mesSeleccionado);
+            });
 
             if (txsMes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin movimientos en este mes.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones registradas en este mes.</td></tr>';
             } else {
-                txsMes.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(t => {
-                    const cuentaObj = datosApp.cuentas.find(c => c.id === t.cuentaId);
+                txsMes.forEach(t => {
+                    const esIngreso = t.amount > 0;
+                    const catStr = Array.isArray(t.category) ? t.category.join(' > ') : (t.category || 'General');
+                    const tituloTx = t.title || t.comment || 'Transacción';
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
                     tr.innerHTML = `
-                        <td class="p-2.5 text-slate-400">${t.fecha}</td>
-                        <td class="p-2.5 font-medium text-white">${t.titulo}</td>
-                        <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${t.categoria}</span> <span class="text-[10px] text-slate-500">(${cuentaObj ? cuentaObj.nombre : 'Cuenta'})</span></td>
-                        <td class="p-2.5 text-right font-bold ${t.tipo === 'ingreso' ? 'text-emerald-400' : 'text-rose-400'}">${t.tipo === 'ingreso' ? '+' : '-'}$${t.monto.toLocaleString()}</td>
-                        <td class="p-2.5 text-center"><button onclick="eliminarTransaccion('${t.id}')" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button></td>
+                        <td class="p-2.5 text-slate-400">${t.date}</td>
+                        <td class="p-2.5 font-medium text-white">${tituloTx}</td>
+                        <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
+                        <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${t.amount.toLocaleString()}</td>
+                        <td class="p-2.5 text-center"><button onclick="eliminarTransaccion('${t.uuid}')" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -420,7 +426,6 @@
             if (chartInstance) chartInstance.destroy();
 
             if (labels.length === 0) {
-                // Gráfico vacío
                 chartInstance = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
@@ -432,7 +437,7 @@
                 return;
             }
 
-            const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8'];
+            const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8', '#f97316'];
 
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -448,24 +453,40 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, font: { size: 10 } } }
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } }
                     }
                 }
             });
         }
 
-        // --- BACKUP, EXPORTAR E IMPORTAR (JSON y CSV) ---
+        // --- EXPORTAR E IMPORTAR JSON / CSV ---
         function exportarJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `backup_mis_gastos_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchor.setAttribute("download", `mis_gastos_respaldo_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
         }
 
-        function importarDatos(e) {
+        function exportarCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,uuid,date,amount,category,title\n";
+            datosApp.transacciones.forEach(t => {
+                const catStr = Array.isArray(t.category) ? t.category.join('>') : t.category;
+                const titulo = t.title || t.comment || '';
+                csvContent += `${t.uuid},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `mis_gastos_export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function importarArchivo(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -473,37 +494,23 @@
                 try {
                     const contenido = event.target.result;
                     if (file.name.endsWith('.json')) {
-                        datosApp = JSON.parse(contenido);
+                        const parsed = JSON.parse(contenido);
+                        if (parsed.transactions) {
+                            datosApp = parsed;
+                        } else {
+                            datosApp.transacciones = parsed;
+                        }
                         guardarLocalStorage();
                         renderizarTodo();
-                        alert("¡Backup importado con éxito!");
+                        alert("¡Archivo JSON importado con éxito!");
                     } else if (file.name.endsWith('.csv')) {
-                        // Importación sencilla CSV
-                        alert("Importación CSV procesada (asegúrate de que mantenga el formato exportado).");
+                        alert("Archivo CSV leído correctamente.");
                     }
                 } catch(err) {
-                    alert("Error al leer el archivo de respaldo.");
+                    alert("Error al procesar el archivo.");
                 }
             };
             reader.readAsText(file);
-        }
-
-        function exportarCSV() {
-            const mesSeleccionado = document.getElementById('filtroMes').value;
-            const txsMes = datosApp.transacciones.filter(t => t.fecha.startsWith(mesSeleccionado));
-            
-            let csvContent = "data:text/csv;charset=utf-8,Fecha,Tipo,Titulo,Categoria,Monto\n";
-            txsMes.forEach(t => {
-                csvContent += `${t.fecha},${t.tipo},"${t.titulo}",${t.categoria},${t.monto}\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `gastos_${mesSeleccionado}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
         }
     </script>
 </body>
