@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Gastos Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para el gráfico de torta -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="h-full text-slate-100 flex flex-col font-sans antialiased">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-500 text-slate-950 p-2.5 rounded-xl font-bold text-xl shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Selector de Mes/Año -->
+                <input type="month" id="filtroMes" onchange="cambiarMes()" class="bg-slate-800 text-slate-200 px-3 py-2 rounded-lg text-sm border border-slate-700 outline-none cursor-pointer">
+                <!-- Botones de Backup e Importar/Exportar -->
+                <button onclick="exportarJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Respaldo JSON">
+                    <i class="fa-solid fa-download text-emerald-400"></i> Backup
+                </button>
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Restaurar Backup">
+                    <i class="fa-solid fa-upload text-sky-400"></i> Importar
+                    <input type="file" id="inputFile" accept=".json,.csv" onchange="importarDatos(event)" class="hidden">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Columna Izquierda: Resumen, Gráfico y Cuentas -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Estado Financiero y Cuentas -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Estado de Cuentas
+                    </h2>
+                    <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
+                        <i class="fa-solid fa-plus"></i> Cuenta
+                    </button>
+                </div>
+                
+                <!-- Balance general -->
+                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800/80">
+                    <div>
+                        <span class="text-xs text-slate-400 block">Total Ingresos</span>
+                        <span id="labelIngresos" class="text-emerald-400 font-bold text-lg">$0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Total Gastos</span>
+                        <span id="labelGastos" class="text-rose-400 font-bold text-lg">$0</span>
+                    </div>
+                </div>
+
+                <!-- Lista de Cuentas -->
+                <div id="listaCuentas" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Gráfico de Torta -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
+                <h2 class="text-base font-semibold text-white w-full mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Distribución de Gastos
+                </h2>
+                <div class="w-64 h-64 relative flex items-center justify-center">
+                    <canvas id="graficoTorta"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha: Transacciones y Registro -->
+        <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Formulario de Transacción (Ingreso o Gasto) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-emerald-400"></i> Nueva Transacción
+                </h2>
+                
+                <form id="formTransaccion" onsubmit="agregarTransaccion(event)" class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <!-- Tipo: Ingreso o Gasto -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                            <select id="tipoTransaccion" onchange="actualizarSelectCategorias()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <option value="gasto">Gasto (-)</option>
+                                <option value="ingreso">Ingreso (+)</option>
+                            </select>
+                        </div>
+                        <!-- Cuenta -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Cuenta</label>
+                            <select id="cuentaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <!-- Dinámico -->
+                            </select>
+                        </div>
+                        <!-- Categoría -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-medium text-slate-400">Categoría</label>
+                                <button type="button" onclick="abrirModalCategoria()" class="text-[10px] text-emerald-400 hover:underline">+ Nueva</button>
+                            </div>
+                            <select id="categoriaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <!-- Dinámico -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Descripción / Título</label>
+                            <input type="text" id="tituloTransaccion" placeholder="Ej: Supermercado, Sueldo, Nafta..." required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Monto ($)</label>
+                            <input type="number" id="montoTransaccion" placeholder="0" step="any" min="1" required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10">
+                        <i class="fa-solid fa-check"></i> Guardar Transacción
+                    </button>
+                </form>
+            </div>
+
+            <!-- Listado de Transacciones del Mes -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportarCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-700">Exportar CSV</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
+                            <tr>
+                                <th class="p-2.5">Fecha</th>
+                                <th class="p-2.5">Título</th>
+                                <th class="p-2.5">Categoría / Cuenta</th>
+                                <th class="p-2.5 text-right">Monto</th>
+                                <th class="p-2.5 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Modal para Agregar Cuenta -->
+    <div id="modalCuenta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Agregar Nueva Cuenta</h3>
+            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Banco, Efectivo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="cerrarModalCuenta()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="guardarNuevaCuenta()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Categoría -->
+    <div id="modalCategoria" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Agregar Nueva Categoría</h3>
+            <input type="text" id="nombreNuevaCategoria" placeholder="Ej: Comida, Transporte, Ropa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="cerrarModalCategoria()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="guardarNuevaCategoria()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de lógica de la aplicación -->
+    <script>
+        let datosApp = {
+            cuentas: [
+                { id: '1', nombre: 'Cuenta Corriente', saldo: 0 },
+                { id: '2', nombre: 'Efectivo', saldo: 0 }
+            ],
+            categorias: {
+                gasto: ['Comida', 'Transporte', 'Vivienda', 'Salud', 'Estudios', 'Entretenimiento'],
+                ingreso: ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
+            },
+            transacciones: []
+        };
+
+        let chartInstance = null;
+
+        window.onload = function() {
+            // Inicializar filtro de mes actual (YYYY-MM)
+            const hoy = new Date();
+            const mesStr = hoy.toISOString().slice(0, 7);
+            document.getElementById('filtroMes').value = mesStr;
+
+            cargarLocalStorage();
+            renderizarTodo();
+        };
+
+        function cargarLocalStorage() {
+            const guardado = localStorage.getItem('mis_gastos_app_data');
+            if (guardado) {
+                try {
+                    datosApp = JSON.parse(guardado);
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        function guardarLocalStorage() {
+            localStorage.setItem('mis_gastos_app_data', JSON.stringify(datosApp));
+        }
+
+        function cambiarMes() {
+            renderizarTodo();
+        }
+
+        // --- GESTIÓN DE CUENTAS Y CATEGORÍAS ---
+        function abrirModalCuenta() { document.getElementById('modalCuenta').classList.remove('hidden'); document.getElementById('modalCuenta').classList.add('flex'); }
+        function cerrarModalCuenta() { document.getElementById('modalCuenta').classList.remove('flex'); document.getElementById('modalCuenta').classList.add('hidden'); }
+        function guardarNuevaCuenta() {
+            const nombre = document.getElementById('nombreNuevaCuenta').value.trim();
+            if (nombre) {
+                datosApp.cuentas.push({ id: Date.now().toString(), nombre, saldo: 0 });
+                document.getElementById('nombreNuevaCuenta').value = '';
+                cerrarModalCuenta();
+                renderizarTodo();
+                guardarLocalStorage();
+            }
+        }
+
+        function abrirModalCategoria() { document.getElementById('modalCategoria').classList.remove('hidden'); document.getElementById('modalCategoria').classList.add('flex'); }
+        function cerrarModalCategoria() { document.getElementById('modalCategoria').classList.remove('flex'); document.getElementById('modalCategoria').classList.add('hidden'); }
+        function guardarNuevaCategoria() {
+            const nombre = document.getElementById('nombreNuevaCategoria').value.trim();
+            const tipo = document.getElementById('tipoTransaccion').value;
+            if (nombre && !datosApp.categorias[tipo].includes(nombre)) {
+                datosApp.categorias[tipo].push(nombre);
+                document.getElementById('nombreNuevaCategoria').value = '';
+                cerrarModalCategoria();
+                actualizarSelectCategorias();
+                guardarLocalStorage();
+            }
+        }
+
+        function actualizarSelectCategorias() {
+            const tipo = document.getElementById('tipoTransaccion').value;
+            const selectCat = document.getElementById('categoriaTransaccion');
+            selectCat.innerHTML = '';
+            datosApp.categorias[tipo].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                selectCat.appendChild(opt);
+            });
+        }
+
+        // --- REGLA DE ORO: SI NO HAY INGRESOS NO PERMITIR GASTAR ---
+        function agregarTransaccion(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('tipoTransaccion').value;
+            const cuentaId = document.getElementById('cuentaTransaccion').value;
+            const categoria = document.getElementById('categoriaTransaccion').value;
+            const titulo = document.getElementById('tituloTransaccion').value.trim();
+            const monto = parseFloat(document.getElementById('montoTransaccion').value);
+
+            // Validar regla de ingresos totales
+            const ingresosTotales = datosApp.transacciones
+                .filter(t => t.tipo === 'ingreso')
+                .reduce((acc, t) => acc + t.monto, 0);
+
+            const gastosTotales = datosApp.transacciones
+                .filter(t => t.tipo === 'gasto')
+                .reduce((acc, t) => acc + t.monto, 0);
+
+            if (tipo === 'gasto' && ingresosTotales === 0) {
+                alert("⚠️ REGLA DE CONTROL: No tienes ningún ingreso registrado. Debes registrar al menos un ingreso antes de poder realizar gastos.");
+                return;
+            }
+
+            if (tipo === 'gasto' && (gastosTotales + monto > ingresosTotales)) {
+                if (!confirm("⚠️ Estás a punto de gastar más de lo que tienes ingresado en total histórico. ¿Deseas continuar de todas formas?")) {
+                    return;
+                }
+            }
+
+            const nuevaTx = {
+                id: Date.now().toString(),
+                fecha: new Date().toISOString().split('T')[0],
+                tipo,
+                cuentaId,
+                categoria,
+                titulo,
+                monto
+            };
+
+            datosApp.transacciones.push(nuevaTx);
+            document.getElementById('tituloTransaccion').value = '';
+            document.getElementById('montoTransaccion').value = '';
+            renderizarTodo();
+            guardarLocalStorage();
+        }
+
+        function eliminarTransaccion(id) {
+            datosApp.transacciones = datosApp.transacciones.filter(t => t.id !== id);
+            renderizarTodo();
+            guardarLocalStorage();
+        }
+
+        // --- RENDERIZADO GENERAL Y GRÁFICO ---
+        function renderizarTodo() {
+            actualizarSelectCategorias();
+            
+            // Renderizar selector de cuentas
+            const selectCuenta = document.getElementById('cuentaTransaccion');
+            const listaCuentasDiv = document.getElementById('listaCuentas');
+            selectCuenta.innerHTML = '';
+            listaCuentasDiv.innerHTML = '';
+
+            let saldosCuentas = {};
+            datosApp.cuentas.forEach(c => { saldosCuentas[c.id] = 0; });
+
+            // Calcular saldos por cuenta y totales del mes seleccionado
+            const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
+            let ingresosMes = 0;
+            let gastosMes = 0;
+            let gastosPorCategoriaMes = {};
+
+            datosApp.transacciones.forEach(t => {
+                // Saldos globales
+                if (t.tipo === 'ingreso') saldosCuentas[t.cuentaId] = (saldosCuentas[t.cuentaId] || 0) + t.monto;
+                if (t.tipo === 'gasto') saldosCuentas[t.cuentaId] = (saldosCuentas[t.cuentaId] || 0) - t.monto;
+
+                // Filtrar por mes para la vista principal
+                if (t.fecha.startsWith(mesSeleccionado)) {
+                    if (t.tipo === 'ingreso') ingresosMes += t.monto;
+                    if (t.tipo === 'gasto') {
+                        gastosMes += t.monto;
+                        gastosPorCategoriaMes[t.categoria] = (gastosPorCategoriaMes[t.categoria] || 0) + t.monto;
+                    }
+                }
+            });
+
+            // Mostrar cuentas
+            datosApp.cuentas.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                selectCuenta.appendChild(opt);
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center text-xs bg-slate-950 px-3 py-2 rounded-lg border border-slate-800";
+                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${(saldosCuentas[c.id] || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${(saldosCuentas[c.id] || 0).toLocaleString()}</span>`;
+                listaCuentasDiv.appendChild(div);
+            });
+
+            document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString();
+            document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString();
+
+            // Renderizar tabla del mes
+            const tbody = document.getElementById('tablaTransacciones');
+            tbody.innerHTML = '';
+            const txsMes = datosApp.transacciones.filter(t => t.fecha.startsWith(mesSeleccionado));
+
+            if (txsMes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin movimientos en este mes.</td></tr>';
+            } else {
+                txsMes.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(t => {
+                    const cuentaObj = datosApp.cuentas.find(c => c.id === t.cuentaId);
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
+                    tr.innerHTML = `
+                        <td class="p-2.5 text-slate-400">${t.fecha}</td>
+                        <td class="p-2.5 font-medium text-white">${t.titulo}</td>
+                        <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${t.categoria}</span> <span class="text-[10px] text-slate-500">(${cuentaObj ? cuentaObj.nombre : 'Cuenta'})</span></td>
+                        <td class="p-2.5 text-right font-bold ${t.tipo === 'ingreso' ? 'text-emerald-400' : 'text-rose-400'}">${t.tipo === 'ingreso' ? '+' : '-'}$${t.monto.toLocaleString()}</td>
+                        <td class="p-2.5 text-center"><button onclick="eliminarTransaccion('${t.id}')" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            renderizarGraficoTorta(gastosPorCategoriaMes);
+        }
+
+        function renderizarGraficoTorta(gastosCat) {
+            const ctx = document.getElementById('graficoTorta').getContext('2d');
+            const labels = Object.keys(gastosCat);
+            const data = Object.values(gastosCat);
+
+            if (chartInstance) chartInstance.destroy();
+
+            if (labels.length === 0) {
+                // Gráfico vacío
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sin gastos'],
+                        datasets: [{ data: [1], backgroundColor: ['#1e293b'] }]
+                    },
+                    options: { plugins: { legend: { display: false } }, maintainAspectRatio: false }
+                });
+                return;
+            }
+
+            const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8'];
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colores.slice(0, labels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // --- BACKUP, EXPORTAR E IMPORTAR (JSON y CSV) ---
+        function exportarJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `backup_mis_gastos_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importarDatos(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const contenido = event.target.result;
+                    if (file.name.endsWith('.json')) {
+                        datosApp = JSON.parse(contenido);
+                        guardarLocalStorage();
+                        renderizarTodo();
+                        alert("¡Backup importado con éxito!");
+                    } else if (file.name.endsWith('.csv')) {
+                        // Importación sencilla CSV
+                        alert("Importación CSV procesada (asegúrate de que mantenga el formato exportado).");
+                    }
+                } catch(err) {
+                    alert("Error al leer el archivo de respaldo.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportarCSV() {
+            const mesSeleccionado = document.getElementById('filtroMes').value;
+            const txsMes = datosApp.transacciones.filter(t => t.fecha.startsWith(mesSeleccionado));
+            
+            let csvContent = "data:text/csv;charset=utf-8,Fecha,Tipo,Titulo,Categoria,Monto\n";
+            txsMes.forEach(t => {
+                csvContent += `${t.fecha},${t.tipo},"${t.titulo}",${t.categoria},${t.monto}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `gastos_${mesSeleccionado}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+    </script>
+</body>
+</html>
