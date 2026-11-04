@@ -3,676 +3,715 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divisor de Cuentas - Restaurante Pro</title>
+    <title>Mis Gastos Pro - Gestión Mensual</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @media print {
-            /* Forzar fondo blanco y texto oscuro al imprimir */
-            body, html {
-                background-color: white !important;
-                color: black !important;
-                height: auto !important;
-            }
-            /* Ocultar elementos de navegación y formularios de la izquierda */
-            header, .no-print, #columna-izquierda {
-                display: none !important;
-            }
-            /* Expandir el contenedor principal y la columna de resumen al 100% */
-            main {
-                display: block !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-            }
-            #columna-resumen {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            /* Asegurar que la tarjeta del resumen luzca limpia en papel */
-            .print-container, #columna-resumen > div {
-                background: white !important;
-                color: black !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 10px !important;
-                margin: 0 !important;
-            }
-            /* Textos oscuros específicos para impresión */
-            h2, span, div, li {
-                color: #1e293b !important;
-            }
-            .text-emerald-400, .text-emerald-300 {
-                color: #047857 !important; /* Verde oscuro legible en papel */
-            }
-            .text-slate-400, .text-slate-300 {
-                color: #475569 !important;
-            }
-            /* Mostrar todas las tarjetas completas sin barras de desplazamiento */
-            #resultadoPersonas {
-                max-height: none !important;
-                overflow: visible !important;
-            }
-        }
-        /* Forzar visibilidad del calendario en inputs de fecha */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
-        }
-    </style>
+    <!-- Chart.js para el gráfico de torta -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="h-full text-slate-100 flex flex-col font-sans antialiased">
 
     <!-- Header -->
-    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 shadow-md no-print">
-        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="bg-emerald-500 text-slate-950 p-2.5 rounded-xl font-bold text-xl shadow-lg shadow-emerald-500/20">
-                    <i class="fa-solid fa-receipt"></i>
+                    <i class="fa-solid fa-wallet"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white tracking-tight">Divisor de Cuentas Pro</h1>
-                    <p class="text-xs text-slate-400">Reparte la cuenta, propinas e invitados de forma justa</p>
+                    <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo inteligente</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="guardarCuentaActual()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-2">
-                    <i class="fa-solid fa-floppy-disk text-emerald-400"></i> Guardar
+                <!-- Selector de Mes -->
+                <div class="flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-400"><i class="fa-solid fa-calendar-days text-emerald-400"></i> Mes:</span>
+                    <input type="month" id="filtroMes" onchange="cambiarMesActivo()" class="bg-transparent text-slate-200 text-sm outline-none cursor-pointer">
+                </div>
+                <!-- Botón Exportar JSON/CSV -->
+                <button onclick="abrirModalExportar()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Datos">
+                    <i class="fa-solid fa-download text-emerald-400"></i> Exportar
                 </button>
-                <select id="selectHistorial" onchange="cargarCuentaSeleccionada(this.value)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 outline-none">
-                    <option value="">Historial guardado...</option>
-                </select>
-                <button onclick="limpiarTodo()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-rose-500/30 flex items-center gap-2" title="Borrar todo">
-                    <i class="fa-solid fa-trash-can"></i> Limpiar
+                <!-- Botón Importar -->
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Importar Respaldo">
+                    <i class="fa-solid fa-upload text-sky-400"></i> Importar
+                    <input type="file" id="inputFile" accept=".json,.csv" onchange="procesarImportacion(event)" class="hidden">
+                </label>
+                <!-- Botón Borrar Todo -->
+                <button onclick="borrarTodaLaApp()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-rose-500/30 flex items-center gap-1.5" title="Borrar toda la app">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Reset App
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 print-container">
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Inputs & Management -->
-        <div id="columna-izquierda" class="lg:col-span-7 space-y-6">
+        <!-- Columna Izquierda: Cuentas y Gráfico de Torta -->
+        <div class="lg:col-span-5 space-y-6">
             
-            <!-- Datos del Restaurant y Selector de Fecha -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-store text-emerald-400"></i> Datos de la Salida
-                </h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Estado Financiero y Cuentas -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Cuentas y Saldos
+                    </h2>
+                    <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
+                        <i class="fa-solid fa-plus"></i> Cuenta
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800/80">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Nombre del Restaurante</label>
-                        <input type="text" id="nombreRestaurante" placeholder="Ej: Cafe del Mar, Vive Miski..." oninput="guardarEnLocalStorage()"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                        <span class="text-xs text-slate-400 block">Total Ingresos Mes</span>
+                        <span id="labelIngresos" class="text-emerald-400 font-bold text-base">$0</span>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Fecha de la Salida</label>
-                        <input type="date" id="fechaSalida" onchange="guardarEnLocalStorage()"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                        <span class="text-xs text-slate-400 block">Total Gastos Mes</span>
+                        <span id="labelGastos" class="text-rose-400 font-bold text-base">$0</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- 1. Integrantes -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-users text-emerald-400"></i> 1. Comensales en la Mesa
-                </h2>
-                <form id="formPersona" onsubmit="agregarPersona(event)" class="flex gap-2 mb-4">
-                    <input type="text" id="nombrePersona" placeholder="Nombre del comensal..." required
-                        class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
-                    <label class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 rounded-xl text-xs text-slate-300 cursor-pointer hover:border-slate-700 transition">
-                        <input type="checkbox" id="esHomenajeado" class="accent-emerald-500 w-4 h-4 rounded">
-                        <span>Homenajeado</span>
-                    </label>
-                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </form>
-                <div id="listaPersonas" class="flex flex-wrap gap-2">
+                <div id="listaCuentas" class="space-y-2 max-h-36 overflow-y-auto pr-1">
                     <!-- Dinámico -->
                 </div>
             </div>
 
-            <!-- 2. Ítems de Consumo -->
+            <!-- Gráfico de Torta por Categorías -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
+                <div class="flex justify-between items-center w-full mb-3">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
+                    </h2>
+                </div>
+                <div class="w-64 h-64 relative flex items-center justify-center">
+                    <canvas id="graficoTorta"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha: Transacciones y Registro -->
+        <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Formulario de Transacción con Regla de Ingresos -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-utensils text-emerald-400"></i> 2. Consumos y Platos
-                </h2>
-                <form id="formItem" onsubmit="agregarItem(event)" class="space-y-3 mb-4">
-                    <div class="flex gap-2">
-                        <input type="text" id="nombreItem" placeholder="Ej: Pizza Napolitana, Vino, Postre..." required
-                            class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
-                        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-emerald-500 transition w-36">
-                            <span class="text-emerald-400 text-sm font-semibold mr-1">$</span>
-                            <input type="number" id="precioItem" placeholder="Precio" step="any" min="1" required
-                                class="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-emerald-400"></i> Nueva Transacción
+                    </h2>
+                    <span id="labelMesActivo" class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-medium">Mes: Actual</span>
+                </div>
+                
+                <form id="formTransaccion" onsubmit="agregarTransaccion(event)" class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                            <select id="tipoTransaccion" onchange="actualizarSelectCategorias()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <option value="gasto">Gasto (-)</option>
+                                <option value="ingreso">Ingreso (+)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Cuenta</label>
+                            <select id="cuentaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <!-- Dinámico -->
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-medium text-slate-400">Categoría</label>
+                                <button type="button" onclick="abrirModalCategoria()" class="text-[10px] text-emerald-400 hover:underline">+ Nueva</button>
+                            </div>
+                            <select id="categoriaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <!-- Dinámico -->
+                            </select>
                         </div>
                     </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1.5">
-                            <label class="text-xs font-medium text-slate-400">¿Quién consumió esto?</label>
-                            <button type="button" onclick="seleccionarTodosConsumidores(true)" class="text-xs text-emerald-400 hover:underline font-medium">Seleccionar todos</button>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Título / Descripción</label>
+                            <input type="text" id="tituloTransaccion" placeholder="Ej: Supermercado, Sueldo, Nafta..." required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
-                        <div id="checkboxesConsumidores" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl">
-                            <!-- Dinámico -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Monto (CLP)</label>
+                            <input type="number" id="montoTransaccion" placeholder="0" step="any" min="1" required
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 rounded-xl text-sm transition border border-slate-700 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-cart-plus text-emerald-400"></i> Agregar Ítem a la Cuenta
+
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10">
+                        <i class="fa-solid fa-check"></i> Registrar Transacción
                     </button>
                 </form>
+            </div>
 
-                <!-- Tabla de Ítems -->
-                <div class="overflow-x-auto">
+            <!-- Listado de Transacciones del Mes con Opciones de Borrar Mes -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
+                    </h2>
+                    <button onclick="borrarMesActual()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-2.5 py-1.5 rounded-lg border border-rose-500/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Borrar este Mes
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto max-h-80 overflow-y-auto">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
                             <tr>
-                                <th class="p-3">Ítem (Editable)</th>
-                                <th class="p-3">Precio</th>
-                                <th class="p-3">Consumidores</th>
-                                <th class="p-3 text-right">Acción</th>
+                                <th class="p-2.5">Fecha</th>
+                                <th class="p-2.5">Título</th>
+                                <th class="p-2.5">Categoría / Cuenta</th>
+                                <th class="p-2.5 text-right">Monto</th>
+                                <th class="p-2.5 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaItems" class="divide-y divide-slate-800/60">
+                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
                             <!-- Dinámico -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 3. Ajustes y Pagador -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-                <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-gear text-emerald-400"></i> 3. Ajustes Finales
-                </h2>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Propina -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Propina (<span id="labelPropinaPct">10</span>%)</label>
-                        <input type="range" id="propinaPct" min="0" max="25" value="10" step="1" oninput="calcularTodo()"
-                            class="w-full accent-emerald-500 bg-slate-950 cursor-pointer">
-                    </div>
-
-                    <!-- Quién pagó -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">¿Quién pagó el total con tarjeta?</label>
-                        <select id="pagadorGlobal" onchange="calcularTodo()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
-                            <option value="">Nadie / Pagos separados</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Right Column: Results & Summary -->
-        <div id="columna-resumen" class="lg:col-span-5 space-y-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl sticky top-6">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-file-invoice-dollar text-emerald-400"></i> Resumen
-                        </h2>
-                        <span id="displayRestauranteFecha" class="text-xs text-slate-400">Restaurante / Fecha</span>
-                    </div>
-                    <span id="totalMesa" class="text-emerald-400 font-bold text-lg">$0</span>
-                </div>
-
-                <!-- Desglose por Persona -->
-                <div id="resultadoPersonas" class="space-y-3 mb-6 max-h-96 overflow-y-auto pr-1">
-                    <!-- Dinámico -->
-                </div>
-
-                <!-- Botones de Acción -->
-                <div class="space-y-2.5 no-print">
-                    <button onclick="copiarWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-                        <i class="fa-brands fa-whatsapp text-lg"></i> Copiar Resumen para WhatsApp
-                    </button>
-                    <button onclick="window.print()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 rounded-xl text-sm transition border border-slate-700 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-pdf text-rose-400"></i> Descargar / Imprimir PDF
-                    </button>
-                </div>
-            </div>
         </div>
 
     </main>
 
-    <!-- Script de lógica -->
+    <!-- Modal para Agregar Cuenta -->
+    <div id="modalCuenta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Agregar Nueva Cuenta</h3>
+            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Bancaria, Efectivo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="cerrarModalCuenta()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="guardarNuevaCuenta()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Categoría -->
+    <div id="modalCategoria" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Agregar Nueva Categoría</h3>
+            <input type="text" id="nombreNuevaCategoria" placeholder="Ej: Comida, Transporte, Ropa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <div class="flex justify-end gap-2">
+                <button onclick="cerrarModalCategoria()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="guardarNuevaCategoria()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Exportar (JSON o CSV) -->
+    <div id="modalExportar" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Exportar Datos</h3>
+            <p class="text-xs text-slate-400">Selecciona el formato en el que deseas exportar tus registros financieros:</p>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="exportarArchivo('json')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm flex flex-col items-center gap-1">
+                    <i class="fa-solid fa-file-code text-lg"></i> JSON
+                </button>
+                <button onclick="exportarArchivo('csv')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm flex flex-col items-center gap-1">
+                    <i class="fa-solid fa-file-csv text-lg"></i> CSV
+                </button>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="cerrarModalExportar()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Estrategia de Importación (Fusionar / Empezar desde 0 / Agregar) -->
+    <div id="modalImportarEstrategia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Importar Datos Detectados</h3>
+            <p id="infoArchivoImportado" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">Archivo analizado correctamente. ¿Cómo deseas aplicar los datos?</p>
+            <div class="space-y-2 pt-2">
+                <button onclick="ejecutarImportacion('fusionar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
+                    <span class="font-semibold text-emerald-400 text-sm block">🔄 Fusionar / Sobrescribir por UUID</span>
+                    <span class="text-[11px] text-slate-400 block">Actualiza los registros existentes y añade los nuevos sin duplicar.</span>
+                </button>
+                <button onclick="ejecutarImportacion('agregar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
+                    <span class="font-semibold text-sky-400 text-sm block">➕ Agregar a los datos actuales</span>
+                    <span class="text-[11px] text-slate-400 block">Conserva todo lo que tienes y añade todas las transacciones del archivo.</span>
+                </button>
+                <button onclick="ejecutarImportacion('cero')" class="w-full text-left bg-rose-500/10 hover:bg-rose-500/20 p-3 rounded-xl border border-rose-500/30 transition">
+                    <span class="font-semibold text-rose-400 text-sm block">🗑️ Empezar desde 0 (Reemplazar todo)</span>
+                    <span class="text-[11px] text-slate-400 block">Borra todos los datos actuales de la app y coloca únicamente los del archivo.</span>
+                </button>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="cancelarImportacion()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Gasto -->
+    <div id="modalEditarGasto" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Editar Transacción</h3>
+            <input type="hidden" id="editUuid">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Título</label>
+                <input type="text" id="editTitulo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Monto (CLP)</label>
+                <input type="number" id="editMonto" step="any" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalEditar()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="guardarEdicionGasto()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de la Aplicación -->
     <script>
-        let personas = [];
-        let items = [];
+        let datosApp = {
+            uuid: "app-gastos-local",
+            label: "Mis Gastos Pro",
+            currency: "CLP",
+            openingBalance: 0,
+            cuentas: [
+                { id: '1', nombre: 'Cuenta Corriente' },
+                { id: '2', nombre: 'Efectivo' }
+            ],
+            categorias: {
+                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales'],
+                ingreso: ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
+            },
+            transacciones: []
+        };
+
+        let chartInstance = null;
+        let archivoTemporalImportado = null;
 
         window.onload = function() {
-            const fechaInput = document.getElementById('fechaSalida');
-            if (!fechaInput.value) {
-                fechaInput.value = new Date().toISOString().split('T')[0];
-            }
+            const hoy = new Date();
+            const mesStr = hoy.toISOString().slice(0, 7); // YYYY-MM
+            document.getElementById('filtroMes').value = mesStr;
 
-            const guardado = localStorage.getItem('divisor_cuenta_actual');
-            if (guardado) {
-                try {
-                    const data = JSON.parse(guardado);
-                    personas = data.personas || [];
-                    items = data.items || [];
-                    if (data.propina) document.getElementById('propinaPct').value = data.propina;
-                    if (data.restaurante) document.getElementById('nombreRestaurante').value = data.restaurante;
-                    if (data.fecha) fechaInput.value = data.fecha;
-                } catch(e) { console.error(e); }
-            }
-            actualizarHistorialSelect();
+            cargarLocalStorage();
             renderizarTodo();
         };
 
-        function limpiarTodo() {
-            if (confirm("¿Estás seguro de que deseas borrar todos los datos actuales?")) {
-                personas = [];
-                items = [];
-                document.getElementById('propinaPct').value = 10;
-                document.getElementById('nombreRestaurante').value = '';
-                document.getElementById('fechaSalida').value = new Date().toISOString().split('T')[0];
-                localStorage.removeItem('divisor_cuenta_actual');
-                renderizarTodo();
+        function cargarLocalStorage() {
+            const guardado = localStorage.getItem('mis_gastos_app_data');
+            if (guardado) {
+                try {
+                    datosApp = JSON.parse(guardado);
+                    if (!datosApp.cuentas) datosApp.cuentas = [{ id: '1', nombre: 'Principal' }];
+                    if (!datosApp.categorias) datosApp.categorias = { gasto: ['Comida', 'Transporte'], ingreso: ['Sueldo'] };
+                    if (!datosApp.transacciones) datosApp.transacciones = [];
+                } catch(e) { console.error(e); }
             }
         }
 
-        function guardarCuentaActual() {
-            const rest = document.getElementById('nombreRestaurante').value.trim() || 'Restaurante';
-            const fecha = document.getElementById('fechaSalida').value;
-            const nombreCuenta = `${rest} (${fecha})`;
-
-            let historial = JSON.parse(localStorage.getItem('divisor_historial') || '[]');
-            const cuentaData = {
-                id: Date.now(),
-                nombre: nombreCuenta,
-                restaurante: rest,
-                fecha: fecha,
-                personas,
-                items,
-                propina: document.getElementById('propinaPct').value
-            };
-            historial.unshift(cuentaData);
-            if (historial.length > 10) historial.pop();
-            localStorage.setItem('divisor_historial', JSON.stringify(historial));
-            localStorage.setItem('divisor_cuenta_actual', JSON.stringify(cuentaData));
-            actualizarHistorialSelect();
-            alert("¡Cuenta guardada con éxito!");
+        function guardarLocalStorage() {
+            localStorage.setItem('mis_gastos_app_data', JSON.stringify(datosApp));
         }
 
-        function actualizarHistorialSelect() {
-            const select = document.getElementById('selectHistorial');
-            let historial = JSON.parse(localStorage.getItem('divisor_historial') || '[]');
-            select.innerHTML = '<option value="">Historial guardado...</option>';
-            historial.forEach(h => {
-                const opt = document.createElement('option');
-                opt.value = h.id;
-                opt.textContent = `${h.nombre}`;
-                select.appendChild(opt);
-            });
-        }
-
-        function cargarCuentaSeleccionada(id) {
-            if (!id) return;
-            let historial = JSON.parse(localStorage.getItem('divisor_historial') || '[]');
-            const encontrada = historial.find(h => h.id == id);
-            if (encontrada) {
-                personas = encontrada.personas;
-                items = encontrada.items;
-                document.getElementById('propinaPct').value = encontrada.propina || 10;
-                document.getElementById('nombreRestaurante').value = encontrada.restaurante || '';
-                document.getElementById('fechaSalida').value = encontrada.fecha || new Date().toISOString().split('T')[0];
-                localStorage.setItem('divisor_cuenta_actual', JSON.stringify(encontrada));
-                renderizarTodo();
-            }
-        }
-
-        function guardarEnLocalStorage() {
-            const data = {
-                restaurante: document.getElementById('nombreRestaurante').value,
-                fecha: document.getElementById('fechaSalida').value,
-                personas,
-                items,
-                propina: document.getElementById('propinaPct').value
-            };
-            localStorage.setItem('divisor_cuenta_actual', JSON.stringify(data));
-            actualizarDisplayEncabezado();
-        }
-
-        function actualizarDisplayEncabezado() {
-            const rest = document.getElementById('nombreRestaurante').value.trim() || 'Mi Salida';
-            const fecha = document.getElementById('fechaSalida').value || '';
-            document.getElementById('displayRestauranteFecha').innerText = `${rest} ${fecha ? '• ' + fecha : ''}`;
-        }
-
-        function agregarPersona(e) {
-            e.preventDefault();
-            const input = document.getElementById('nombrePersona');
-            const esHomenajeado = document.getElementById('esHomenajeado').checked;
-            const nombre = input.value.trim();
-            
-            if (nombre && !personas.some(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
-                personas.push({ id: Date.now().toString(), nombre, esHomenajeado });
-                input.value = '';
-                document.getElementById('esHomenajeado').checked = false;
-                renderizarTodo();
-            }
-        }
-
-        function actualizarNombrePersona(id, nuevoNombre) {
-            const persona = personas.find(p => p.id === id);
-            if (persona && nuevoNombre.trim()) {
-                persona.nombre = nuevoNombre.trim();
-                guardarEnLocalStorage();
-                renderizarCheckboxesConsumidores();
-                calcularTodo();
-            }
-        }
-
-        function eliminarPersona(id) {
-            personas = personas.filter(p => p.id !== id);
-            items.forEach(item => {
-                item.consumidores = item.consumidores.filter(cId => cId !== id);
-            });
+        function cambiarMesActivo() {
             renderizarTodo();
         }
 
-        function seleccionarTodosConsumidores(estado) {
-            const checkboxes = document.querySelectorAll('#checkboxesConsumidores input[type="checkbox"]');
-            checkboxes.forEach(cb => cb.checked = estado);
-        }
-
-        function agregarItem(e) {
-            e.preventDefault();
-            const nombre = document.getElementById('nombreItem').value.trim();
-            const precio = parseFloat(document.getElementById('precioItem').value);
-            
-            const checkboxes = document.querySelectorAll('#checkboxesConsumidores input[type="checkbox"]:checked');
-            let consumidores = Array.from(checkboxes).map(cb => cb.value);
-
-            if (consumidores.length === 0) {
-                alert("Debes seleccionar al menos a una persona que haya consumido este ítem.");
-                return;
-            }
-
-            if (nombre && precio > 0) {
-                items.push({ id: Date.now().toString(), nombre, precio, consumidores });
-                document.getElementById('nombreItem').value = '';
-                document.getElementById('precioItem').value = '';
-                seleccionarTodosConsumidores(false);
+        // --- GESTIÓN DE CUENTAS Y CATEGORÍAS ---
+        function abrirModalCuenta() { document.getElementById('modalCuenta').classList.remove('hidden'); document.getElementById('modalCuenta').classList.add('flex'); }
+        function cerrarModalCuenta() { document.getElementById('modalCuenta').classList.remove('flex'); document.getElementById('modalCuenta').classList.add('hidden'); }
+        function guardarNuevaCuenta() {
+            const nombre = document.getElementById('nombreNuevaCuenta').value.trim();
+            if (nombre) {
+                datosApp.cuentas.push({ id: Date.now().toString(), nombre });
+                document.getElementById('nombreNuevaCuenta').value = '';
+                cerrarModalCuenta();
                 renderizarTodo();
+                guardarLocalStorage();
             }
         }
 
-        function actualizarItemNombre(id, nuevoNombre) {
-            const item = items.find(i => i.id === id);
-            if (item && nuevoNombre.trim()) {
-                item.nombre = nuevoNombre.trim();
-                guardarEnLocalStorage();
-                calcularTodo();
+        function abrirModalCategoria() { document.getElementById('modalCategoria').classList.remove('hidden'); document.getElementById('modalCategoria').classList.add('flex'); }
+        function cerrarModalCategoria() { document.getElementById('modalCategoria').classList.remove('flex'); document.getElementById('modalCategoria').classList.add('hidden'); }
+        function guardarNuevaCategoria() {
+            const nombre = document.getElementById('nombreNuevaCategoria').value.trim();
+            const tipo = document.getElementById('tipoTransaccion').value;
+            if (nombre && !datosApp.categorias[tipo].includes(nombre)) {
+                datosApp.categorias[tipo].push(nombre);
+                document.getElementById('nombreNuevaCategoria').value = '';
+                cerrarModalCategoria();
+                actualizarSelectCategorias();
+                guardarLocalStorage();
             }
         }
 
-        function actualizarItemPrecio(id, nuevoPrecio) {
-            const precio = parseFloat(nuevoPrecio);
-            const item = items.find(i => i.id === id);
-            if (item && !isNaN(precio) && precio > 0) {
-                item.precio = precio;
-                guardarEnLocalStorage();
-                calcularTodo();
-            }
-        }
-
-        function eliminarItem(id) {
-            items = items.filter(i => i.id !== id);
-            renderizarTodo();
-        }
-
-        function renderizarTodo() {
-            renderizarPersonas();
-            renderizarCheckboxesConsumidores();
-            renderizarTablaItems();
-            actualizarDisplayEncabezado();
-            calcularTodo();
-            guardarEnLocalStorage();
-        }
-
-        function renderizarPersonas() {
-            const container = document.getElementById('listaPersonas');
-            container.innerHTML = '';
-            if (personas.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 italic">No hay comensales agregados aún.</p>';
-                return;
-            }
-            personas.forEach(p => {
-                const tag = document.createElement('div');
-                tag.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border ${p.esHomenajeado ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-200'}`;
-                tag.innerHTML = `
-                    <input type="text" value="${p.nombre}" onchange="actualizarNombrePersona('${p.id}', this.value)" class="bg-transparent border-b border-slate-700 focus:border-emerald-500 outline-none w-28 text-xs text-white px-1">
-                    ${p.esHomenajeado ? '<span class="bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded text-[10px]">Homenajeado</span>' : ''}
-                    <button onclick="eliminarPersona('${p.id}')" class="text-slate-500 hover:text-rose-400 transition ml-1"><i class="fa-solid fa-xmark"></i></button>
-                `;
-                container.appendChild(tag);
-            });
-        }
-
-        function renderizarCheckboxesConsumidores() {
-            const container = document.getElementById('checkboxesConsumidores');
-            container.innerHTML = '';
-            if (personas.length === 0) {
-                container.innerHTML = '<span class="text-xs text-slate-500 italic">Agrega comensales primero.</span>';
-                return;
-            }
-            personas.forEach(p => {
-                const lbl = document.createElement('label');
-                lbl.className = 'flex items-center gap-1.5 text-xs text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700';
-                lbl.innerHTML = `<input type="checkbox" value="${p.id}" class="accent-emerald-500 rounded"><span>${p.nombre}</span>`;
-                container.appendChild(lbl);
-            });
-        }
-
-        function renderizarTablaItems() {
-            const tbody = document.getElementById('tablaItems');
-            tbody.innerHTML = '';
-            if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic text-xs">Sin consumos registrados.</td></tr>';
-                return;
-            }
-            items.forEach(item => {
-                const nombresConsumidores = item.consumidores.length === personas.length ? 'Todos' : item.consumidores.map(cId => {
-                    const p = personas.find(pers => pers.id === cId);
-                    return p ? p.nombre : '';
-                }).filter(Boolean).join(', ');
-
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-slate-800/40 hover:bg-slate-950/40';
-                tr.innerHTML = `
-                    <td class="p-3 font-medium text-white">
-                        <input type="text" value="${item.nombre}" onchange="actualizarItemNombre('${item.id}', this.value)" class="bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded px-2 py-1 outline-none w-full text-sm text-white">
-                    </td>
-                    <td class="p-3">
-                        <div class="flex items-center bg-slate-950 border border-slate-800 focus-within:border-emerald-500 rounded px-2 py-1 w-28">
-                            <span class="text-emerald-400 text-sm font-semibold mr-1">$</span>
-                            <input type="number" value="${item.precio}" onchange="actualizarItemPrecio('${item.id}', this.value)" class="bg-transparent outline-none w-full text-sm text-emerald-400">
-                        </div>
-                    </td>
-                    <td class="p-3 text-slate-400 text-xs">${nombresConsumidores}</td>
-                    <td class="p-3 text-right">
-                        <button onclick="eliminarItem('${item.id}')" class="text-slate-500 hover:text-rose-400 transition"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function obtenerDatosCalculados() {
-            const propinaPct = parseFloat(document.getElementById('propinaPct').value) || 0;
-            
-            let detallePersonaItems = {};
-            personas.forEach(p => { detallePersonaItems[p.id] = []; });
-
-            items.forEach(item => {
-                if (item.consumidores.length > 0) {
-                    let costoPorPersona = item.precio / item.consumidores.length;
-                    item.consumidores.forEach(cId => {
-                        if (detallePersonaItems[cId]) {
-                            detallePersonaItems[cId].push({ nombreItem: item.nombre, monto: costoPorPersona });
-                        }
-                    });
-                }
-            });
-
-            let subtotalConsumos = {};
-            personas.forEach(p => {
-                subtotalConsumos[p.id] = detallePersonaItems[p.id].reduce((acc, curr) => acc + curr.monto, 0);
-            });
-
-            let noHomenajeados = personas.filter(p => !p.esHomenajeado);
-            let homenajeados = personas.filter(p => p.esHomenajeado);
-            
-            let totalHomenajeadosConsumo = homenajeados.reduce((acc, h) => acc + (subtotalConsumos[h.id] || 0), 0);
-            let extraPorPersonaNoHomenajeada = noHomenajeados.length > 0 ? totalHomenajeadosConsumo / noHomenajeados.length : 0;
-
-            let sumaSubtotales = 0;
-            noHomenajeados.forEach(p => {
-                sumaSubtotales += (subtotalConsumos[p.id] || 0) + extraPorPersonaNoHomenajeada;
-            });
-
-            let propinaTotal = sumaSubtotales * (propinaPct / 100);
-
-            return { propinaPct, detallePersonaItems, subtotalConsumos, sumaSubtotales, propinaTotal, extraPorPersonaNoHomenajeada };
-        }
-
-        function calcularTodo() {
-            const propinaPct = parseFloat(document.getElementById('propinaPct').value) || 0;
-            document.getElementById('labelPropinaPct').innerText = propinaPct;
-
-            const selectPagador = document.getElementById('pagadorGlobal');
-            const pagadorActual = selectPagador.value;
-            selectPagador.innerHTML = '<option value="">Nadie / Pagos separados</option>';
-            personas.forEach(p => {
+        function actualizarSelectCategorias() {
+            const tipo = document.getElementById('tipoTransaccion').value;
+            const selectCat = document.getElementById('categoriaTransaccion');
+            selectCat.innerHTML = '';
+            datosApp.categorias[tipo].forEach(cat => {
                 const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.nombre;
-                if (p.id === pagadorActual) opt.selected = true;
-                selectPagador.appendChild(opt);
-            });
-
-            const calc = obtenerDatosCalculados();
-            let granTotalMesa = calc.sumaSubtotales + calc.propinaTotal;
-
-            document.getElementById('totalMesa').innerText = '$' + Math.round(granTotalMesa).toLocaleString();
-
-            const contenedorResultados = document.getElementById('resultadoPersonas');
-            contenedorResultados.innerHTML = '';
-
-            if (personas.length === 0) {
-                contenedorResultados.innerHTML = '<p class="text-xs text-slate-500 italic">Agrega comensales para ver el cálculo.</p>';
-                return;
-            }
-
-            let pagadorId = selectPagador.value;
-
-            personas.forEach(p => {
-                let misItems = calc.detallePersonaItems[p.id] || [];
-                let totalPersona = 0;
-                let consumoBase = calc.subtotalConsumos[p.id] || 0;
-                let prop = 0;
-
-                if (!p.esHomenajeado) {
-                    let sub = consumoBase + calc.extraPorPersonaNoHomenajeada;
-                    prop = calc.sumaSubtotales > 0 ? (sub / calc.sumaSubtotales) * calc.propinaTotal : 0;
-                    totalPersona = sub + prop;
-                }
-
-                const card = document.createElement('div');
-                card.className = `p-3.5 rounded-xl border ${p.esHomenajeado ? 'bg-amber-950/20 border-amber-500/30' : 'bg-slate-950/60 border-slate-800/80'}`;
-                
-                let itemsHtml = misItems.map(i => `<li class="text-[11px] text-slate-400 flex justify-between"><span>- ${i.nombreItem}</span><span class="text-slate-300">$${Math.round(i.monto).toLocaleString()}</span></li>`).join('');
-                if (misItems.length === 0) {
-                    itemsHtml = `<li class="text-[11px] text-slate-500 italic">Sin consumos directos registrados.</li>`;
-                }
-
-                let htmlCard = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-semibold text-white text-sm flex items-center gap-1.5">
-                            ${p.nombre} ${p.esHomenajeado ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-normal">Homenajeado (Invitado)</span>' : ''}
-                        </span>
-                        <span class="font-bold text-emerald-400 text-base">$${Math.round(totalPersona).toLocaleString()}</span>
-                    </div>
-                    <ul class="space-y-0.5 my-1.5 pl-1 border-l border-slate-800">
-                        ${itemsHtml}
-                    </ul>
-                    <div class="text-[11px] text-slate-400 flex justify-between pt-1 border-t border-slate-800/60">
-                        <span>Consumo: $${p.esHomenajeado ? '0 (Invitado)' : Math.round(consumoBase + calc.extraPorPersonaNoHomenajeada).toLocaleString()}</span>
-                        <span>Propina (${propinaPct}%): $${Math.round(prop).toLocaleString()}</span>
-                    </div>
-                `;
-
-                if (pagadorId && pagadorId !== p.id && totalPersona > 0) {
-                    const nombrePagador = personas.find(pers => pers.id === pagadorId)?.nombre || 'el pagador';
-                    htmlCard += `<div class="mt-2 pt-2 border-t border-slate-800/60 text-xs text-emerald-300 font-medium flex items-center gap-1">
-                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Debe transferir $${Math.round(totalPersona).toLocaleString()} a ${nombrePagador}
-                    </div>`;
-                }
-
-                card.innerHTML = htmlCard;
-                contenedorResultados.appendChild(card);
+                opt.value = cat;
+                opt.textContent = cat;
+                selectCat.appendChild(opt);
             });
         }
 
-        function copiarWhatsApp() {
-            const calc = obtenerDatosCalculados();
-            let propinaPct = document.getElementById('propinaPct').value;
-            let pagadorId = document.getElementById('pagadorGlobal').value;
-            let nombrePagador = personas.find(p => p.id === pagadorId)?.nombre || '';
-            let rest = document.getElementById('nombreRestaurante').value.trim() || 'Restaurante';
-            let fecha = document.getElementById('fechaSalida').value || '';
+        // --- REGLA DE ORO: SI NO HAY INGRESOS NO PERMITIR GASTAR ---
+        function agregarTransaccion(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('tipoTransaccion').value;
+            const cuentaId = document.getElementById('cuentaTransaccion').value;
+            const categoria = document.getElementById('categoriaTransaccion').value;
+            const titulo = document.getElementById('tituloTransaccion').value.trim();
+            const montoInput = parseFloat(document.getElementById('montoTransaccion').value);
 
-            let texto = `🧾 *RESUMEN DE CUENTA* 🍽️\n`;
-            texto += `📍 *Lugar:* ${rest}\n`;
-            if (fecha) texto += `📅 *Fecha:* ${fecha}\n`;
-            texto += `\n`;
+            const ingresosTotales = datosApp.transacciones
+                .filter(t => t.amount > 0)
+                .reduce((acc, t) => acc + t.amount, 0);
 
-            personas.forEach(p => {
-                let misItems = calc.detallePersonaItems[p.id] || [];
-                let totalPersona = 0;
-                let consumoSub = 0;
-                let prop = 0;
+            if (tipo === 'gasto' && ingresosTotales <= 0) {
+                alert("⚠️ REGLA DE CONTROL ACTIVADA: No tienes ningún ingreso registrado en la aplicación. Debes registrar al menos un ingreso antes de poder realizar gastos.");
+                return;
+            }
 
-                if (!p.esHomenajeado) {
-                    consumoSub = (calc.subtotalConsumos[p.id] || 0) + calc.extraPorPersonaNoHomenajeada;
-                    prop = calc.sumaSubtotales > 0 ? (consumoSub / calc.sumaSubtotales) * calc.propinaTotal : 0;
-                    totalPersona = consumoSub + prop;
-                }
+            // Usar la fecha del mes seleccionado en el filtro superior
+            const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
+            const fechaTx = `${mesSeleccionado}-01`; // Día 1 por defecto del mes activo
 
-                texto += `👤 *${p.nombre}*${p.esHomenajeado ? ' (Homenajeado - Invitado)' : ''}\n`;
-                misItems.forEach(i => {
-                    texto += `   • ${i.nombreItem}: $${Math.round(i.monto).toLocaleString()}\n`;
+            const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
+
+            const nuevaTx = {
+                uuid: 'tx-' + Date.now(),
+                date: fechaTx,
+                amount: amountFinal,
+                category: [categoria],
+                cuentaId: cuentaId,
+                title: titulo,
+                status: "UNRECONCILED"
+            };
+
+            datosApp.transacciones.push(nuevaTx);
+            document.getElementById('tituloTransaccion').value = '';
+            document.getElementById('montoTransaccion').value = '';
+            renderizarTodo();
+            guardarLocalStorage();
+        }
+
+        // --- ACCIONES DE BORRADO Y EDICIÓN ---
+        function eliminarTransaccion(uuid) {
+            if (confirm("¿Estás seguro de eliminar este registro?")) {
+                datosApp.transacciones = datosApp.transacciones.filter(t => t.uuid !== uuid);
+                renderizarTodo();
+                guardarLocalStorage();
+            }
+        }
+
+        function borrarMesActual() {
+            const mesSeleccionado = document.getElementById('filtroMes').value;
+            if (confirm(`¿Estás seguro de borrar TODAS las transacciones del mes ${mesSeleccionado}?`)) {
+                datosApp.transacciones = datosApp.transacciones.filter(t => {
+                    let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+                    return !fechaIso.startsWith(mesSeleccionado);
                 });
-                if (misItems.length === 0) {
-                    texto += `   • Sin consumos directos\n`;
-                }
+                renderizarTodo();
+                guardarLocalStorage();
+                alert("Mes borrado con éxito.");
+            }
+        }
 
-                if (p.esHomenajeado) {
-                    texto += `   ➡️ *Total a pagar: $0* *(Su consumo fue invitado al grupo)*\n\n`;
-                } else {
-                    texto += `   ➡️ *Total a pagar: $${Math.round(totalPersona).toLocaleString()}* (Consumo: $${Math.round(consumoSub).toLocaleString()} + Propina ${propinaPct}%: $${Math.round(prop).toLocaleString()})\n\n`;
+        function borrarTodaLaApp() {
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de borrar TODOS los datos de la aplicación? Se eliminarán cuentas, categorías y transacciones.")) {
+                localStorage.removeItem('mis_gastos_app_data');
+                datosApp = {
+                    uuid: "app-gastos-local",
+                    label: "Mis Gastos Pro",
+                    currency: "CLP",
+                    openingBalance: 0,
+                    cuentas: [{ id: '1', nombre: 'Cuenta Corriente' }],
+                    categorias: { gasto: ['Comida', 'Transporte'], ingreso: ['Sueldo'] },
+                    transacciones: []
+                };
+                renderizarTodo();
+                alert("Aplicación restablecida desde cero.");
+            }
+        }
+
+        function abrirModalEditar(uuid) {
+            const tx = datosApp.transacciones.find(t => t.uuid === uuid);
+            if (tx) {
+                document.getElementById('editUuid').value = tx.uuid;
+                document.getElementById('editTitulo').value = tx.title || tx.comment || '';
+                document.getElementById('editMonto').value = Math.abs(tx.amount);
+                document.getElementById('modalEditarGasto').classList.remove('hidden');
+                document.getElementById('modalEditarGasto').classList.add('flex');
+            }
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modalEditarGasto').classList.remove('flex');
+            document.getElementById('modalEditarGasto').classList.add('hidden');
+        }
+
+        function guardarEdicionGasto() {
+            const uuid = document.getElementById('editUuid').value;
+            const nuevoTitulo = document.getElementById('editTitulo').value.trim();
+            const nuevoMonto = parseFloat(document.getElementById('editMonto').value);
+
+            const tx = datosApp.transacciones.find(t => t.uuid === uuid);
+            if (tx && nuevoTitulo && !isNaN(nuevoMonto)) {
+                tx.title = nuevoTitulo;
+                tx.amount = tx.amount > 0 ? nuevoMonto : -nuevoMonto;
+                guardarLocalStorage();
+                renderizarTodo();
+                cerrarModalEditar();
+            }
+        }
+
+        function convertirFechaDMY(dateStr) {
+            const partes = dateStr.split('/');
+            if (partes.length === 3) return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+            return dateStr;
+        }
+
+        // --- RENDERIZADO Y GRÁFICO ---
+        function renderizarTodo() {
+            actualizarSelectCategorias();
+
+            const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
+            document.getElementById('labelMesActivo').innerText = `Mes: ${mesSeleccionado}`;
+
+            const selectCuenta = document.getElementById('cuentaTransaccion');
+            const listaCuentasDiv = document.getElementById('listaCuentas');
+            selectCuenta.innerHTML = '';
+            listaCuentasDiv.innerHTML = '';
+
+            let saldosCuentas = {};
+            datosApp.cuentas.forEach(c => { saldosCuentas[c.id] = 0; });
+
+            let ingresosMes = 0;
+            let gastosMes = 0;
+            let gastosPorCategoriaMes = {};
+
+            datosApp.transacciones.forEach(t => {
+                const cId = t.cuentaId || (datosApp.cuentas[0] ? datosApp.cuentas[0].id : '1');
+                if (t.amount > 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
+                if (t.amount < 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
+
+                let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+
+                if (fechaIso.startsWith(mesSeleccionado)) {
+                    if (t.amount > 0) ingresosMes += t.amount;
+                    if (t.amount < 0) {
+                        const valGasto = Math.abs(t.amount);
+                        gastosMes += valGasto;
+                        const catPrincipal = Array.isArray(t.category) ? t.category[0] : (t.category || 'General');
+                        gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
+                    }
                 }
             });
 
-            if (pagadorId) {
-                texto += `💳 *Pagó la cuenta con tarjeta:* ${nombrePagador}\n*(Por favor transferirle el monto correspondiente a cada uno)*`;
+            datosApp.cuentas.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                selectCuenta.appendChild(opt);
+
+                const saldoCuenta = saldosCuentas[c.id] || 0;
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center text-xs bg-slate-950 px-3 py-2 rounded-lg border border-slate-800";
+                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${saldoCuenta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${saldoCuenta.toLocaleString()} CLP</span>`;
+                listaCuentasDiv.appendChild(div);
+            });
+
+            document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
+            document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
+
+            // Renderizar tabla
+            const tbody = document.getElementById('tablaTransacciones');
+            tbody.innerHTML = '';
+            
+            const txsMes = datosApp.transacciones.filter(t => {
+                let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+                return fechaIso.startsWith(mesSeleccionado);
+            });
+
+            if (txsMes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones registradas en este mes.</td></tr>';
+            } else {
+                txsMes.forEach(t => {
+                    const esIngreso = t.amount > 0;
+                    const catStr = Array.isArray(t.category) ? t.category.join(' > ') : (t.category || 'General');
+                    const tituloTx = t.title || t.comment || 'Transacción';
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
+                    tr.innerHTML = `
+                        <td class="p-2.5 text-slate-400">${t.date}</td>
+                        <td class="p-2.5 font-medium text-white">${tituloTx}</td>
+                        <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
+                        <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
+                        <td class="p-2.5 text-center flex justify-center gap-2">
+                            <button onclick="abrirModalEditar('${t.uuid}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarTransaccion('${t.uuid}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
 
-            navigator.clipboard.writeText(texto).then(() => {
-                alert("¡Resumen copiado para WhatsApp con éxito!");
+            renderizarGraficoTorta(gastosPorCategoriaMes);
+        }
+
+        function renderizarGraficoTorta(gastosCat) {
+            const ctx = document.getElementById('graficoTorta').getContext('2d');
+            const labels = Object.keys(gastosCat);
+            const data = Object.values(gastosCat);
+
+            if (chartInstance) chartInstance.destroy();
+
+            if (labels.length === 0) {
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sin gastos'],
+                        datasets: [{ data: [1], backgroundColor: ['#1e293b'] }]
+                    },
+                    options: { plugins: { legend: { display: false } }, maintainAspectRatio: false }
+                });
+                return;
+            }
+
+            const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8', '#f97316'];
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colores.slice(0, labels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } }
+                    }
+                }
             });
+        }
+
+        // --- EXPORTAR E IMPORTAR INTELIGENTE ---
+        function abrirModalExportar() { document.getElementById('modalExportar').classList.remove('hidden'); document.getElementById('modalExportar').classList.add('flex'); }
+        function cerrarModalExportar() { document.getElementById('modalExportar').classList.remove('flex'); document.getElementById('modalExportar').classList.add('hidden'); }
+
+        function exportarArchivo(tipo) {
+            cerrarModalExportar();
+            if (tipo === 'json') {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
+                const dlAnchor = document.createElement('a');
+                dlAnchor.setAttribute("href", dataStr);
+                dlAnchor.setAttribute("download", `mis_gastos_backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(dlAnchor);
+                dlAnchor.click();
+                dlAnchor.remove();
+            } else if (tipo === 'csv') {
+                let csvContent = "data:text/csv;charset=utf-8,uuid,date,amount,category,title\n";
+                datosApp.transacciones.forEach(t => {
+                    const catStr = Array.isArray(t.category) ? t.category.join('>') : t.category;
+                    const titulo = t.title || t.comment || '';
+                    csvContent += `${t.uuid || ''},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `mis_gastos_export_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        }
+
+        function procesarImportacion(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const contenido = event.target.result;
+                    if (file.name.endsWith('.json')) {
+                        const parsed = JSON.parse(contenido);
+                        archivoTemporalImportado = parsed.transactions ? parsed : { transacciones: parsed };
+                    } else if (file.name.endsWith('.csv')) {
+                        // Parser básico de CSV
+                        const lineas = contenido.split('\n');
+                        let txs = [];
+                        for (let i = 1; i < lineas.length; i++) {
+                            const linea = lineas[i].trim();
+                            if (!linea) continue;
+                            const partes = linea.split(',');
+                            if (partes.length >= 4) {
+                                txs.push({
+                                    uuid: partes[0] || ('csv-' + Math.random()),
+                                    date: partes[1] || new Date().toISOString().split('T')[0],
+                                    amount: parseFloat(partes[2]) || 0,
+                                    category: [partes[3].replace(/"/g, '')],
+                                    title: partes[4] ? partes[4].replace(/"/g, '') : 'Importado CSV'
+                                });
+                            }
+                        }
+                        archivoTemporalImportado = { transacciones: txs };
+                    }
+
+                    if (archivoTemporalImportado) {
+                        document.getElementById('infoArchivoImportado').innerText = `Archivo cargado con éxito. Se detectaron ${archivoTemporalImportado.transacciones.length} transacciones. ¿Cómo deseas proceder?`;
+                        document.getElementById('modalImportarEstrategia').classList.remove('hidden');
+                        document.getElementById('modalImportarEstrategia').classList.add('flex');
+                    }
+                } catch(err) {
+                    alert("Error al leer el archivo de importación.");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset input
+        }
+
+        function cancelarImportacion() {
+            archivoTemporalImportado = null;
+            document.getElementById('modalImportarEstrategia').classList.remove('flex');
+            document.getElementById('modalImportarEstrategia').classList.add('hidden');
+        }
+
+        function ejecutarImportacion(estrategia) {
+            if (!archivoTemporalImportado) return;
+
+            if (estrategia === 'cero') {
+                // Empezar desde 0
+                datosApp.transacciones = archivoTemporalImportado.transacciones || [];
+                if (archivoTemporalImportado.cuentas) datosApp.cuentas = archivoTemporalImportado.cuentas;
+            } else if (estrategia === 'agregar') {
+                // Agregar al final
+                datosApp.transacciones = datosApp.transacciones.concat(archivoTemporalImportado.transacciones || []);
+            } else if (estrategia === 'fusionar') {
+                // Fusionar por UUID (actualiza si existe, añade si no)
+                let mapaTxs = new Map();
+                datosApp.transacciones.forEach(t => mapaTxs.set(t.uuid, t));
+                (archivoTemporalImportado.transacciones || []).forEach(t => mapaTxs.set(t.uuid, t));
+                datosApp.transacciones = Array.from(mapaTxs.values());
+            }
+
+            guardarLocalStorage();
+            renderizarTodo();
+            cancelarImportacion();
+            alert("¡Importación completada con éxito!");
         }
     </script>
 </body>
