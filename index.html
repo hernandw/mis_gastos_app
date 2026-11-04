@@ -293,7 +293,6 @@
         let archivoTemporalImportado = null;
 
         window.onload = function() {
-            // Inicializar con el mes actual o noviembre 2026 según tus datos de prueba
             document.getElementById('filtroMes').value = '2026-11';
             cargarLocalStorage();
             renderizarTodo();
@@ -346,7 +345,6 @@
             const tipo = document.getElementById('tipoTransaccion').value;
             const selectCat = document.getElementById('categoriaTransaccion');
             selectCat.innerHTML = '';
-            // Asegurar categorías estándar por si vienen vacías
             if (!datosApp.categorias[tipo]) datosApp.categorias[tipo] = ['General'];
             datosApp.categorias[tipo].forEach(cat => {
                 const opt = document.createElement('option');
@@ -395,7 +393,7 @@
 
         function eliminarTransaccion(uuid) {
             if (confirm("¿Estás seguro de eliminar este registro?")) {
-                datosApp.transacciones = datosApp.transacciones.filter(t => t.uuid !== uuid);
+                datosApp.transacciones = datosApp.transacciones.filter(t => (t.uuid || t.id) !== uuid);
                 renderizarTodo();
                 guardarLocalStorage();
             }
@@ -432,9 +430,9 @@
         }
 
         function abrirModalEditar(uuid) {
-            const tx = datosApp.transacciones.find(t => t.uuid === uuid);
+            const tx = datosApp.transacciones.find(t => (t.uuid || t.id) === uuid);
             if (tx) {
-                document.getElementById('editUuid').value = tx.uuid;
+                document.getElementById('editUuid').value = (tx.uuid || tx.id);
                 document.getElementById('editTitulo').value = tx.title || tx.comment || '';
                 document.getElementById('editMonto').value = Math.abs(tx.amount);
                 document.getElementById('modalEditarGasto').classList.remove('hidden');
@@ -452,7 +450,7 @@
             const nuevoTitulo = document.getElementById('editTitulo').value.trim();
             const nuevoMonto = parseFloat(document.getElementById('editMonto').value);
 
-            const tx = datosApp.transacciones.find(t => t.uuid === uuid);
+            const tx = datosApp.transacciones.find(t => (t.uuid || t.id) === uuid);
             if (tx && nuevoTitulo && !isNaN(nuevoMonto)) {
                 tx.title = nuevoTitulo;
                 tx.amount = tx.amount > 0 ? nuevoMonto : -nuevoMonto;
@@ -504,12 +502,11 @@
                         const valGasto = Math.abs(t.amount);
                         gastosMes += valGasto;
                         
-                        // Extraer categoría principal (compatible con arrays o strings)
                         let catPrincipal = 'General';
                         if (Array.isArray(t.category) && t.category.length > 0) {
                             catPrincipal = t.category[0];
                         } else if (typeof t.category === 'string') {
-                            catPrincipal = t.category;
+                            catPrincipal = t.category.split('>')[0].trim();
                         }
                         
                         gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
@@ -634,7 +631,7 @@
                 datosApp.transacciones.forEach(t => {
                     const catStr = Array.isArray(t.category) ? t.category.join('>') : (t.category || 'General');
                     const titulo = t.title || t.comment || '';
-                    csvContent += `${t.uuid || 'tx-' + Math.random()},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
+                    csvContent += `${t.uuid || t.id || 'tx-' + Math.random()},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
                 });
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
@@ -655,29 +652,69 @@
                     const contenido = event.target.result;
                     if (file.name.endsWith('.json')) {
                         const parsed = JSON.parse(contenido);
-                        // Compatible con tu formato JSON (que tiene 'transactions')
                         if (parsed.transactions) {
-                            archivoTemporalImportado = parsed;
-                        } else if (Array.isArray(parsed)) {
-                            archivoTemporalImportado = { transacciones: parsed };
+                            // Formato de tu JSON de referencia
+                            const txs = parsed.transactions.map(t => ({
+                                uuid: t.uuid || ('json-' + Math.random()),
+                                date: t.date || '2026-11-01',
+                                amount: t.amount || 0,
+                                category: Array.isArray(t.category) ? t.category : [t.category || 'General'],
+                                title: t.comment || t.title || 'Transacción'
+                            }));
+                            archivoTemporalImportado = { transacciones: txs };
                         } else {
-                            archivoTemporalImportado = { transacciones: [parsed] };
+                            archivoTemporalImportado = parsed;
                         }
                     } else if (file.name.endsWith('.csv')) {
+                        // Parser robusto para CSV de referencia
                         const lineas = contenido.split('\n');
                         let txs = [];
                         for (let i = 1; i < lineas.length; i++) {
                             const linea = lineas[i].trim();
                             if (!linea) continue;
-                            const partes = linea.split(',');
-                            if (partes.length >= 3) {
-                                txs.push({
-                                    uuid: partes[0] || ('csv-' + Math.random()),
-                                    date: partes[1] || '23/10/2026',
-                                    amount: parseFloat(partes[2]) || 0,
-                                    category: partes[3] ? [partes[3].replace(/"/g, '')] : ['General'],
-                                    title: partes[4] ? partes[4].replace(/"/g, '') : 'Movimiento CSV'
-                                });
+                            
+                            // Separar considerando comillas CSV
+                            const partes = linea.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linea.split(',');
+                            
+                            // Si el formato es de tu app original: "Transacción dividida","Fecha","Contraparte","Ingreso","Gasto","Categoría","Notas",...
+                            if (linea.includes('"')) {
+                                const cols = [];
+                                let inQuote = false;
+                                let cur = '';
+                                for (let c = 0; c < linea.length; c++) {
+                                    let char = linea[c];
+                                    if (char === '"') {
+                                        inQuote = !inQuote;
+                                    } else if (char === ',' && !inQuote) {
+                                        cols.push(cur.replace(/^"|"$/g, '').trim());
+                                        cur = '';
+                                    } else {
+                                        cur += char;
+                                    }
+                                }
+                                cols.push(cur.replace(/^"|"$/g, '').trim());
+
+                                if (cols.length >= 7) {
+                                    const fecha = cols[1] || '01/11/2026';
+                                    const ingreso = parseFloat(cols[3]) || 0;
+                                    const gasto = parseFloat(cols[4]) || 0;
+                                    const categoria = cols[5] || 'General';
+                                    const notas = cols[6] || 'Gasto CSV';
+
+                                    let montoFinal = 0;
+                                    if (ingreso > 0) montoFinal = ingreso;
+                                    else if (gasto > 0) montoFinal = -Math.abs(gasto);
+
+                                    if (montoFinal !== 0) {
+                                        txs.push({
+                                            uuid: 'csv-' + Math.random(),
+                                            date: fecha,
+                                            amount: montoFinal,
+                                            category: categoria.includes('>') ? categoria.split('>').map(s => s.trim()) : [categoria],
+                                            title: notas || 'Gasto importado'
+                                        });
+                                    }
+                                }
                             }
                         }
                         archivoTemporalImportado = { transacciones: txs };
@@ -689,7 +726,7 @@
                         document.getElementById('modalImportarEstrategia').classList.add('flex');
                     }
                 } catch(err) {
-                    alert("Error al procesar el archivo JSON/CSV. Verifica que la estructura sea correcta.");
+                    alert("Error al procesar el archivo. Revisa el formato.");
                     console.error(err);
                 }
             };
@@ -723,7 +760,7 @@
             guardarLocalStorage();
             renderizarTodo();
             cancelarImportacion();
-            alert("¡Importación y fusión completadas con éxito!");
+            alert("¡Importación completada con éxito!");
         }
     </script>
 </body>
