@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
-                    <p class="text-xs text-slate-400">Categorías, subcategorías, cuentas y transferencias</p>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo inteligente</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -36,17 +36,17 @@
                     <i class="fa-solid fa-right-left"></i> Transferir
                 </button>
                 <!-- Botón Exportar -->
-                <button onclick="abrirModalExportar()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5">
+                <button onclick="abrirModalExportar()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Datos">
                     <i class="fa-solid fa-download text-emerald-400"></i> Exportar
                 </button>
                 <!-- Botón Importar -->
-                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer">
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Importar Respaldo">
                     <i class="fa-solid fa-upload text-amber-400"></i> Importar
                     <input type="file" id="inputFile" accept=".json,.csv" onchange="procesarImportacion(event)" class="hidden">
                 </label>
-                <!-- Botón Reset -->
-                <button onclick="borrarTodaLaApp()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-rose-500/30 flex items-center gap-1.5">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Reset
+                <!-- Botón Borrar Todo -->
+                <button onclick="borrarTodaLaApp()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-rose-500/30 flex items-center gap-1.5" title="Borrar toda la app">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Reset App
                 </button>
             </div>
         </div>
@@ -65,7 +65,7 @@
                         <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Gestión de Cuentas
                     </h2>
                     <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
-                        <i class="fa-solid fa-plus"></i> Nueva Cuenta
+                        <i class="fa-solid fa-plus"></i> Cuenta
                     </button>
                 </div>
                 
@@ -262,6 +262,31 @@
         </div>
     </div>
 
+    <!-- Modal para Estrategia de Importación -->
+    <div id="modalImportarEstrategia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Importar Datos Detectados</h3>
+            <p id="infoArchivoImportado" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">Archivo analizado correctamente. ¿Cómo deseas aplicar los datos?</p>
+            <div class="space-y-2 pt-2">
+                <button onclick="ejecutarImportacion('fusionar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
+                    <span class="font-semibold text-emerald-400 text-sm block">🔄 Fusionar / Sobrescribir por UUID</span>
+                    <span class="text-[11px] text-slate-400 block">Actualiza registros existentes y añade nuevos sin duplicar.</span>
+                </button>
+                <button onclick="ejecutarImportacion('agregar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
+                    <span class="font-semibold text-sky-400 text-sm block">➕ Agregar a los datos actuales</span>
+                    <span class="text-[11px] text-slate-400 block">Conserva tus datos actuales y añade todas las transacciones del archivo.</span>
+                </button>
+                <button onclick="ejecutarImportacion('cero')" class="w-full text-left bg-rose-500/10 hover:bg-rose-500/20 p-3 rounded-xl border border-rose-500/30 transition">
+                    <span class="font-semibold text-rose-400 text-sm block">🗑️ Empezar desde 0 (Reemplazar todo)</span>
+                    <span class="text-[11px] text-slate-400 block">Borra todo lo actual y coloca únicamente los datos del archivo.</span>
+                </button>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="cancelarImportacion()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Editar Gasto -->
     <div id="modalEditarGasto" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
@@ -288,12 +313,10 @@
             uuid: "app-gastos-local",
             label: "Mis Gastos Pro",
             currency: "CLP",
-            openingBalance: 0,
             cuentas: [
                 { id: '1', nombre: 'Cuenta Corriente' },
                 { id: '2', nombre: 'Efectivo' }
             ],
-            // Estructura jerárquica de Categorías y Subcategorías
             categorias: {
                 gasto: {
                     "Salud": ["Consulta médica", "Medicinas", "Odontólogo", "Hospital", "Farmacia"],
@@ -321,6 +344,7 @@
 
         let chartInstance = null;
         let tipoCatModalActual = 'principal';
+        let archivoTemporalImportado = null;
 
         window.onload = function() {
             document.getElementById('filtroMes').value = '2026-11';
@@ -424,7 +448,7 @@
 
         // --- GESTIÓN DE CATEGORÍAS Y SUBCATEGORÍAS ---
         function abrirModalCategoria(tipo) {
-            tipoCatModalActual = tipo; // 'principal' o 'sub'
+            tipoCatModalActual = tipo;
             document.getElementById('tituloModalCategoria').innerText = tipo === 'principal' ? 'Agregar Categoría Principal' : 'Agregar Subcategoría';
             document.getElementById('nombreNuevaCatInput').value = '';
             document.getElementById('modalCategoria').classList.remove('hidden');
@@ -511,7 +535,7 @@
                 uuid: 'tx-' + Date.now(),
                 date: `${mesSeleccionado}-01`,
                 amount: amountFinal,
-                category: [catPrin, subCat], // Guarda como arreglo [Categoría, Subcategoría]
+                category: [catPrin, subCat],
                 cuentaId: cuentaId,
                 title: titulo,
                 status: "UNRECONCILED"
@@ -738,7 +762,7 @@
             });
         }
 
-        // --- EXPORTAR E IMPORTAR (JSON / CSV) ---
+        // --- EXPORTAR E IMPORTAR SUPREMO (JSON Y CSV COMPATIBLES) ---
         function abrirModalExportar() { document.getElementById('modalExportar').classList.remove('hidden'); document.getElementById('modalExportar').classList.add('flex'); }
         function cerrarModalExportar() { document.getElementById('modalExportar').classList.remove('flex'); document.getElementById('modalExportar').classList.add('hidden'); }
 
@@ -773,13 +797,14 @@
 
                     if (file.name.endsWith('.json')) {
                         const parsed = JSON.parse(contenido);
+                        // Soporta tanto la estructura { transactions: [...] [...] } como un array directo
                         const rawTxs = parsed.transactions || parsed;
                         if (Array.isArray(rawTxs)) {
                             nuevasTxs = rawTxs.map(t => ({
                                 uuid: t.uuid || ('json-' + Math.random()),
                                 date: t.date || '23/10/2026',
                                 amount: t.amount !== undefined ? t.amount : (t.gasto ? -Math.abs(t.gasto) : (t.ingreso || 0)),
-                                category: Array.isArray(t.category) ? t.category : (t.category ? t.category.split('>') : ['General']),
+                                category: Array.isArray(t.category) ? t.category : (t.category ? t.category.split('>') : ['General', 'General']),
                                 title: t.comment || t.title || t.notes || 'Transacción'
                             }));
                         }
@@ -805,6 +830,7 @@
                             }
                             cols.push(cur.replace(/^"|"$/g, '').trim());
 
+                            // Soporte para CSV de tu app de gastos: ["Transacción dividida","Fecha","Contraparte","Ingreso","Gasto","Categoría","Notas",...][cite: 24]
                             if (cols.length >= 6) {
                                 const fecha = cols[1] || '23/10/2026';
                                 const ingreso = parseFloat(cols[3]) || 0;
@@ -821,7 +847,7 @@
                                         uuid: 'csv-' + Math.random(),
                                         date: fecha,
                                         amount: montoFinal,
-                                        category: categoriaStr.includes('>') ? categoriaStr.split('>').map(s => s.trim()) : [categoriaStr],
+                                        category: categoriaStr.includes('>') ? categoriaStr.split('>').map(s => s.trim()) : [categoriaStr, 'General'],
                                         title: notas || 'Movimiento CSV'
                                     });
                                 }
@@ -830,10 +856,10 @@
                     }
 
                     if (nuevasTxs.length > 0) {
-                        datosApp.transacciones = datosApp.transacciones.concat(nuevasTxs);
-                        guardarLocalStorage();
-                        renderizarTodo();
-                        alert(`¡Importación exitosa! Se cargaron ${nuevasTxs.length} transacciones.`);
+                        archivoTemporalImportado = { transacciones: nuevasTxs };
+                        document.getElementById('infoArchivoImportado').innerText = `Archivo cargado con éxito. Se detectaron ${nuevasTxs.length} transacciones. ¿Cómo deseas aplicar los datos?`;
+                        document.getElementById('modalImportarEstrategia').classList.remove('hidden');
+                        document.getElementById('modalImportarEstrategia').classList.add('flex');
                     } else {
                         alert("No se encontraron transacciones válidas en el archivo.");
                     }
@@ -844,6 +870,33 @@
             };
             reader.readAsText(file);
             e.target.value = '';
+        }
+
+        function cancelarImportacion() {
+            archivoTemporalImportado = null;
+            document.getElementById('modalImportarEstrategia').classList.remove('flex');
+            document.getElementById('modalImportarEstrategia').classList.add('hidden');
+        }
+
+        function ejecutarImportacion(estrategia) {
+            if (!archivoTemporalImportado) return;
+            const nuevasTxs = archivoTemporalImportado.transacciones || [];
+
+            if (estrategia === 'cero') {
+                datosApp.transacciones = nuevasTxs;
+            } else if (estrategia === 'agregar') {
+                datosApp.transacciones = datosApp.transacciones.concat(nuevasTxs);
+            } else if (estrategia === 'fusionar') {
+                let mapaTxs = new Map();
+                datosApp.transacciones.forEach(t => mapaTxs.set(t.uuid || t.id, t));
+                nuevasTxs.forEach(t => mapaTxs.set(t.uuid || t.id, t));
+                datosApp.transacciones = Array.from(mapaTxs.values());
+            }
+
+            guardarLocalStorage();
+            renderizarTodo();
+            cancelarImportacion();
+            alert("¡Importación y fusión completadas con éxito!");
         }
     </script>
 </body>
