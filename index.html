@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
-                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías y respaldo inteligente</p>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, transferencias y respaldo</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -31,18 +31,22 @@
                     <span class="text-xs text-slate-400"><i class="fa-solid fa-calendar-days text-emerald-400"></i> Mes:</span>
                     <input type="month" id="filtroMes" onchange="renderizarTodo()" class="bg-transparent text-slate-200 text-sm outline-none cursor-pointer">
                 </div>
-                <!-- Botón Exportar JSON/CSV -->
+                <!-- Botón Transferir / Retirar -->
+                <button onclick="abrirModalTransferencia()" class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Transferir entre cuentas">
+                    <i class="fa-solid fa-right-left"></i> Transferir
+                </button>
+                <!-- Botón Exportar -->
                 <button onclick="abrirModalExportar()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Datos">
                     <i class="fa-solid fa-download text-emerald-400"></i> Exportar
                 </button>
                 <!-- Botón Importar -->
                 <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5 cursor-pointer" title="Importar Respaldo">
-                    <i class="fa-solid fa-upload text-sky-400"></i> Importar
+                    <i class="fa-solid fa-upload text-amber-400"></i> Importar
                     <input type="file" id="inputFile" accept=".json,.csv" onchange="procesarImportacion(event)" class="hidden">
                 </label>
-                <!-- Botón Borrar Todo -->
+                <!-- Botón Reset -->
                 <button onclick="borrarTodaLaApp()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition border border-rose-500/30 flex items-center gap-1.5" title="Borrar toda la app">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Reset App
+                    <i class="fa-solid fa-triangle-exclamation"></i> Reset
                 </button>
             </div>
         </div>
@@ -58,10 +62,10 @@
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Cuentas y Saldos
+                        <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Gestión de Cuentas
                     </h2>
                     <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
-                        <i class="fa-solid fa-plus"></i> Cuenta
+                        <i class="fa-solid fa-plus"></i> Nueva Cuenta
                     </button>
                 </div>
                 
@@ -76,15 +80,15 @@
                     </div>
                 </div>
 
-                <div id="listaCuentas" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                <div id="listaCuentas" class="space-y-2 max-h-40 overflow-y-auto pr-1">
                     <!-- Dinámico -->
                 </div>
             </div>
 
-            <!-- Gráfico de Torta por Categorías -->
+            <!-- Gráfico de Torta con Porcentajes Visibles -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
                 <h2 class="text-base font-semibold text-white w-full mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
+                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Distribución de Gastos (%)
                 </h2>
                 <div class="w-64 h-64 relative flex items-center justify-center">
                     <canvas id="graficoTorta"></canvas>
@@ -96,7 +100,7 @@
         <!-- Columna Derecha: Transacciones y Registro -->
         <div class="lg:col-span-7 space-y-6">
             
-            <!-- Formulario de Transacción con Regla de Ingresos -->
+            <!-- Formulario de Transacción -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -134,7 +138,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-medium text-slate-400 mb-1">Título / Descripción</label>
-                            <input type="text" id="tituloTransaccion" placeholder="Ej: Supermercado, Sueldo, Nafta..." required
+                            <input type="text" id="tituloTransaccion" placeholder="Ej: Supermercado, Sueldo..." required
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
                         <div>
@@ -187,10 +191,38 @@
     <div id="modalCuenta" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Agregar Nueva Cuenta</h3>
-            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Bancaria, Efectivo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <input type="text" id="nombreNuevaCuenta" placeholder="Ej: Cuenta Banco, Ahorros..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
             <div class="flex justify-end gap-2">
                 <button onclick="cerrarModalCuenta()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
                 <button onclick="guardarNuevaCuenta()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Transferencias / Retiros entre Cuentas -->
+    <div id="modalTransferencia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Transferir o Retirar entre Cuentas</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Cuenta de Origen (Resta saldo)</label>
+                <select id="cuentaOrigen" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <!-- Dinámico -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Cuenta de Destino (Suma saldo o Retiro)</label>
+                <select id="cuentaDestino" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="retiro">💵 Retiro de efectivo / Gasto externo</option>
+                    <!-- Dinámico -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Monto a Transferir (CLP)</label>
+                <input type="number" id="montoTransferencia" placeholder="0" min="1" step="any" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalTransferencia()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="ejecutarTransferencia()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Realizar Transferencia</button>
             </div>
         </div>
     </div>
@@ -199,7 +231,7 @@
     <div id="modalCategoria" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Agregar Nueva Categoría</h3>
-            <input type="text" id="nombreNuevaCategoria" placeholder="Ej: Comida, Transporte, Ropa..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+            <input type="text" id="nombreNuevaCategoria" placeholder="Ej: Comida, Transporte..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
             <div class="flex justify-end gap-2">
                 <button onclick="cerrarModalCategoria()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
                 <button onclick="guardarNuevaCategoria()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
@@ -207,18 +239,13 @@
         </div>
     </div>
 
-    <!-- Modal para Exportar -->
+    <!-- Modal Exportar -->
     <div id="modalExportar" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Exportar Datos</h3>
-            <p class="text-xs text-slate-400">Selecciona el formato de exportación:</p>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="exportarArchivo('json')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm flex flex-col items-center gap-1">
-                    <i class="fa-solid fa-file-code text-lg"></i> JSON
-                </button>
-                <button onclick="exportarArchivo('csv')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm flex flex-col items-center gap-1">
-                    <i class="fa-solid fa-file-csv text-lg"></i> CSV
-                </button>
+                <button onclick="exportarArchivo('json')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm">JSON</button>
+                <button onclick="exportarArchivo('csv')" class="bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm">CSV</button>
             </div>
             <div class="flex justify-end pt-2">
                 <button onclick="cerrarModalExportar()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
@@ -226,32 +253,7 @@
         </div>
     </div>
 
-    <!-- Modal para Estrategia de Importación -->
-    <div id="modalImportarEstrategia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 class="text-base font-semibold text-white">Importar Datos Detectados</h3>
-            <p id="infoArchivoImportado" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">Archivo analizado correctamente. ¿Cómo deseas aplicar los datos?</p>
-            <div class="space-y-2 pt-2">
-                <button onclick="ejecutarImportacion('fusionar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
-                    <span class="font-semibold text-emerald-400 text-sm block">🔄 Fusionar / Sobrescribir por ID</span>
-                    <span class="text-[11px] text-slate-400 block">Actualiza registros existentes y añade nuevos sin duplicar.</span>
-                </button>
-                <button onclick="ejecutarImportacion('agregar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
-                    <span class="font-semibold text-sky-400 text-sm block">➕ Agregar a los datos actuales</span>
-                    <span class="text-[11px] text-slate-400 block">Conserva tus datos actuales y añade todas las transacciones del archivo.</span>
-                </button>
-                <button onclick="ejecutarImportacion('cero')" class="w-full text-left bg-rose-500/10 hover:bg-rose-500/20 p-3 rounded-xl border border-rose-500/30 transition">
-                    <span class="font-semibold text-rose-400 text-sm block">🗑️ Empezar desde 0 (Reemplazar todo)</span>
-                    <span class="text-[11px] text-slate-400 block">Borra todo lo actual y coloca únicamente los datos del archivo.</span>
-                </button>
-            </div>
-            <div class="flex justify-end pt-2">
-                <button onclick="cancelarImportacion()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Edición de Gasto -->
+    <!-- Modal Editar Gasto -->
     <div id="modalEditarGasto" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Editar Transacción</h3>
@@ -266,7 +268,7 @@
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="cerrarModalEditar()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
-                <button onclick="guardarEdicionGasto()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar Cambios</button>
+                <button onclick="guardarEdicionGasto()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
             </div>
         </div>
     </div>
@@ -283,7 +285,7 @@
                 { id: '2', nombre: 'Efectivo' }
             ],
             categorias: {
-                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales', 'Regalos', 'Niños', 'Gastos'],
+                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales', 'Regalos', 'Niños'],
                 ingreso: ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
             },
             transacciones: []
@@ -314,6 +316,7 @@
             localStorage.setItem('mis_gastos_app_data', JSON.stringify(datosApp));
         }
 
+        // --- GESTIÓN DE CUENTAS Y TRANSFERENCIAS ---
         function abrirModalCuenta() { document.getElementById('modalCuenta').classList.remove('hidden'); document.getElementById('modalCuenta').classList.add('flex'); }
         function cerrarModalCuenta() { document.getElementById('modalCuenta').classList.remove('flex'); document.getElementById('modalCuenta').classList.add('hidden'); }
         function guardarNuevaCuenta() {
@@ -327,6 +330,74 @@
             }
         }
 
+        function abrirModalTransferencia() {
+            const origen = document.getElementById('cuentaOrigen');
+            const destino = document.getElementById('cuentaDestino');
+            origen.innerHTML = '';
+            destino.innerHTML = '<option value="retiro">💵 Retiro de efectivo / Gasto externo</option>';
+
+            datosApp.cuentas.forEach(c => {
+                origen.appendChild(new Option(c.nombre, c.id));
+                destino.appendChild(new Option(c.nombre, c.id));
+            });
+
+            document.getElementById('modalTransferencia').classList.remove('hidden');
+            document.getElementById('modalTransferencia').classList.add('flex');
+        }
+        function cerrarModalTransferencia() {
+            document.getElementById('modalTransferencia').classList.remove('flex');
+            document.getElementById('modalTransferencia').classList.add('hidden');
+        }
+
+        function ejecutarTransferencia() {
+            const origenId = document.getElementById('cuentaOrigen').value;
+            const destinoId = document.getElementById('cuentaDestino').value;
+            const monto = parseFloat(document.getElementById('montoTransferencia').value);
+
+            if (!monto || monto <= 0) {
+                alert("Ingresa un monto válido para la transferencia.");
+                return;
+            }
+            if (origenId === destinoId) {
+                alert("La cuenta de origen y destino no pueden ser la misma.");
+                return;
+            }
+
+            const cOrigen = datosApp.cuentas.find(c => c.id === origenId);
+            const mesSeleccionado = document.getElementById('filtroMes').value;
+
+            // Registrar movimiento de salida en origen
+            datosApp.transacciones.push({
+                uuid: 'tx-tr-out-' + Date.now(),
+                date: `${mesSeleccionado}-01`,
+                amount: -monto,
+                category: ['Transferencias'],
+                cuentaId: origenId,
+                title: destinoId === 'retiro' ? `Retiro desde ${cOrigen.nombre}` : `Transferencia a cuenta`,
+                status: "UNRECONCILED"
+            });
+
+            // Si es transferencia entre cuentas propias, registrar entrada en destino
+            if (destinoId !== 'retiro') {
+                datosApp.transacciones.push({
+                    uuid: 'tx-tr-in-' + Date.now(),
+                    date: `${mesSeleccionado}-01`,
+                    amount: monto,
+                    category: ['Transferencias'],
+                    cuentaId: destinoId,
+                    title: `Transferencia desde ${cOrigen.nombre}`,
+                    status: "UNRECONCILED"
+                });
+            }
+
+            document.getElementById('montoTransferencia').value = '';
+            cerrarModalTransferencia();
+            renderizarTodo();
+            guardarLocalStorage();
+            alert("¡Transferencia / Retiro realizado con éxito!");
+        }
+
+        // --- CATEGORÍAS Y TRANSACCIONES ---
         function abrirModalCategoria() { document.getElementById('modalCategoria').classList.remove('hidden'); document.getElementById('modalCategoria').classList.add('flex'); }
         function cerrarModalCategoria() { document.getElementById('modalCategoria').classList.remove('flex'); document.getElementById('modalCategoria').classList.add('hidden'); }
         function guardarNuevaCategoria() {
@@ -347,10 +418,7 @@
             selectCat.innerHTML = '';
             if (!datosApp.categorias[tipo]) datosApp.categorias[tipo] = ['General'];
             datosApp.categorias[tipo].forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                selectCat.appendChild(opt);
+                selectCat.appendChild(new Option(cat, cat));
             });
         }
 
@@ -371,10 +439,10 @@
                 return;
             }
 
-            const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
+            const mesSeleccionado = document.getElementById('filtroMes').value;
             const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
 
-            const nuevaTx = {
+            datosApp.transacciones.push({
                 uuid: 'tx-' + Date.now(),
                 date: `${mesSeleccionado}-01`,
                 amount: amountFinal,
@@ -382,9 +450,8 @@
                 cuentaId: cuentaId,
                 title: titulo,
                 status: "UNRECONCILED"
-            };
+            });
 
-            datosApp.transacciones.push(nuevaTx);
             document.getElementById('tituloTransaccion').value = '';
             document.getElementById('montoTransaccion').value = '';
             renderizarTodo();
@@ -401,19 +468,15 @@
 
         function borrarMesActual() {
             const mesSeleccionado = document.getElementById('filtroMes').value;
-            if (confirm(`¿Estás seguro de borrar TODAS las transacciones del mes ${mesSeleccionado}?`)) {
-                datosApp.transacciones = datosApp.transacciones.filter(t => {
-                    let fechaIso = normalizarFechaIso(t.date);
-                    return !fechaIso.startsWith(mesSeleccionado);
-                });
+            if (confirm(`¿Borrar TODAS las transacciones del mes ${mesSeleccionado}?`)) {
+                datosApp.transacciones = datosApp.transacciones.filter(t => !normalizarFechaIso(t.date).startsWith(mesSeleccionado));
                 renderizarTodo();
                 guardarLocalStorage();
-                alert("Mes borrado con éxito.");
             }
         }
 
         function borrarTodaLaApp() {
-            if (confirm("⚠️ ADVERTENCIA: ¿Borrar TODOS los datos de la app? Se perderán cuentas y transacciones.")) {
+            if (confirm("⚠️ ¿Borrar TODOS los datos de la app?")) {
                 localStorage.removeItem('mis_gastos_app_data');
                 datosApp = {
                     uuid: "app-gastos-local",
@@ -425,7 +488,6 @@
                     transacciones: []
                 };
                 renderizarTodo();
-                alert("Aplicación restablecida.");
             }
         }
 
@@ -439,12 +501,10 @@
                 document.getElementById('modalEditarGasto').classList.add('flex');
             }
         }
-
         function cerrarModalEditar() {
             document.getElementById('modalEditarGasto').classList.remove('flex');
             document.getElementById('modalEditarGasto').classList.add('hidden');
         }
-
         function guardarEdicionGasto() {
             const uuid = document.getElementById('editUuid').value;
             const nuevoTitulo = document.getElementById('editTitulo').value.trim();
@@ -464,9 +524,7 @@
             if (!dateStr) return '2026-11-01';
             if (dateStr.includes('/')) {
                 const partes = dateStr.split('/');
-                if (partes.length === 3) {
-                    return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
-                }
+                if (partes.length === 3) return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
             }
             return dateStr;
         }
@@ -474,7 +532,7 @@
         function renderizarTodo() {
             actualizarSelectCategorias();
 
-            const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
+            const mesSeleccionado = document.getElementById('filtroMes').value;
             document.getElementById('labelMesActivo').innerText = `Mes: ${mesSeleccionado}`;
 
             const selectCuenta = document.getElementById('cuentaTransaccion');
@@ -491,94 +549,75 @@
 
             datosApp.transacciones.forEach(t => {
                 const cId = t.cuentaId || (datosApp.cuentas[0] ? datosApp.cuentas[0].id : '1');
-                if (t.amount > 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
-                if (t.amount < 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
+                if (saldosCuentas[cId] !== undefined) {
+                    saldosCuentas[cId] += t.amount;
+                } else {
+                    saldosCuentas[cId] = t.amount;
+                }
 
                 let fechaIso = normalizarFechaIso(t.date);
-
                 if (fechaIso.startsWith(mesSeleccionado)) {
                     if (t.amount > 0) ingresosMes += t.amount;
                     if (t.amount < 0) {
                         const valGasto = Math.abs(t.amount);
                         gastosMes += valGasto;
-                        
-                        let catPrincipal = 'General';
-                        if (Array.isArray(t.category) && t.category.length > 0) {
-                            catPrincipal = t.category[0];
-                        } else if (typeof t.category === 'string') {
-                            catPrincipal = t.category.split('>')[0].trim();
-                        }
-                        
+                        let catPrincipal = Array.isArray(t.category) ? t.category[0] : (t.category || 'General');
                         gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
                     }
                 }
             });
 
             datosApp.cuentas.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.nombre;
-                selectCuenta.appendChild(opt);
-
-                const saldoCuenta = saldosCuentas[c.id] || 0;
+                selectCuenta.appendChild(new Option(c.nombre, c.id));
+                const saldo = saldosCuentas[c.id] || 0;
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center text-xs bg-slate-950 px-3 py-2 rounded-lg border border-slate-800";
-                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${saldoCuenta >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${saldoCuenta.toLocaleString()} CLP</span>`;
+                div.innerHTML = `<span class="font-medium text-slate-300">${c.nombre}</span><span class="font-bold ${saldo >= 0 ? 'text-emerald-400' : 'text-rose-400'}">$${saldo.toLocaleString()} CLP</span>`;
                 listaCuentasDiv.appendChild(div);
             });
 
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Renderizar tabla del mes
+            // Tabla del mes
             const tbody = document.getElementById('tablaTransacciones');
             tbody.innerHTML = '';
-            
-            const txsMes = datosApp.transacciones.filter(t => {
-                let fechaIso = normalizarFechaIso(t.date);
-                return fechaIso.startsWith(mesSeleccionado);
-            });
+            const txsMes = datosApp.transacciones.filter(t => normalizarFechaIso(t.date).startsWith(mesSeleccionado));
 
             if (txsMes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones registradas en este mes.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones en este mes.</td></tr>';
             } else {
                 txsMes.forEach(t => {
                     const esIngreso = t.amount > 0;
-                    let catStr = 'General';
-                    if (Array.isArray(t.category)) {
-                        catStr = t.category.join(' > ');
-                    } else if (t.category) {
-                        catStr = t.category;
-                    }
-
-                    const tituloTx = t.title || t.comment || 'Transacción';
+                    let catStr = Array.isArray(t.category) ? t.category.join(' > ') : (t.category || 'General');
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
                     tr.innerHTML = `
                         <td class="p-2.5 text-slate-400">${t.date}</td>
-                        <td class="p-2.5 font-medium text-white">${tituloTx}</td>
+                        <td class="p-2.5 font-medium text-white">${t.title || t.comment || 'Transacción'}</td>
                         <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
                         <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
                         <td class="p-2.5 text-center flex justify-center gap-2">
-                            <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
 
-            renderizarGraficoTorta(gastosPorCategoriaMes);
+            renderizarGraficoTorta(gastosPorCategoriaMes, gastosMes);
         }
 
-        function renderizarGraficoTorta(gastosCat) {
+        // --- GRÁFICO DE TORTA CON PORCENTAJES VISIBLES ---
+        function renderizarGraficoTorta(gastosCat, totalGastosMes) {
             const ctx = document.getElementById('graficoTorta').getContext('2d');
             const labels = Object.keys(gastosCat);
             const data = Object.values(gastosCat);
 
             if (chartInstance) chartInstance.destroy();
 
-            if (labels.length === 0) {
+            if (labels.length === 0 || totalGastosMes === 0) {
                 chartInstance = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
@@ -591,6 +630,27 @@
             }
 
             const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8', '#f97316'];
+
+            // Plugin personalizado para pintar el porcentaje directamente dentro de la torta
+            const pluginPorcentajes = {
+                id: 'pluginPorcentajes',
+                afterDatasetsDraw(chart) {
+                    const { ctx, data } = chart;
+                    chart.getDatasetMeta(0).data.forEach((datapoint, index) => {
+                        const { x, y } = datapoint.tooltipPosition();
+                        const valor = data.datasets[0].data[index];
+                        const porcentaje = ((valor / totalGastosMes) * 100).toFixed(1) + '%';
+                        
+                        if (parseFloat(porcentaje) > 3) { // Mostrar solo si es mayor al 3% para evitar amontonamiento
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = 'bold 10px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(porcentaje, x, y);
+                        }
+                    });
+                }
+            };
 
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -608,11 +668,12 @@
                     plugins: {
                         legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } }
                     }
-                }
+                },
+                plugins: [pluginPorcentajes]
             });
         }
 
-        // --- EXPORTAR E IMPORTAR INTELIGENTE ---
+        // --- EXPORTAR E IMPORTAR ---
         function abrirModalExportar() { document.getElementById('modalExportar').classList.remove('hidden'); document.getElementById('modalExportar').classList.add('flex'); }
         function cerrarModalExportar() { document.getElementById('modalExportar').classList.remove('flex'); document.getElementById('modalExportar').classList.add('hidden'); }
 
@@ -620,26 +681,19 @@
             cerrarModalExportar();
             if (tipo === 'json') {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
-                const dlAnchor = document.createElement('a');
-                dlAnchor.setAttribute("href", dataStr);
-                dlAnchor.setAttribute("download", `mis_gastos_backup_${new Date().toISOString().slice(0,10)}.json`);
-                document.body.appendChild(dlAnchor);
-                dlAnchor.click();
-                dlAnchor.remove();
+                const dl = document.createElement('a');
+                dl.setAttribute("href", dataStr);
+                dl.setAttribute("download", `mis_gastos_backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(dl); dl.click(); dl.remove();
             } else if (tipo === 'csv') {
-                let csvContent = "data:text/csv;charset=utf-8,uuid,date,amount,category,title\n";
+                let csv = "uuid,date,amount,category,title\n";
                 datosApp.transacciones.forEach(t => {
-                    const catStr = Array.isArray(t.category) ? t.category.join('>') : (t.category || 'General');
-                    const titulo = t.title || t.comment || '';
-                    csvContent += `${t.uuid || t.id || 'tx-' + Math.random()},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
+                    csv += `${t.uuid || ''},${t.date},${t.amount},"${Array.isArray(t.category) ? t.category.join('>') : t.category}","${t.title || ''}"\n`;
                 });
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `mis_gastos_export_${new Date().toISOString().slice(0,10)}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
+                const dl = document.createElement('a');
+                dl.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
+                dl.setAttribute("download", `mis_gastos_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(dl); dl.click(); dl.remove();
             }
         }
 
@@ -647,120 +701,19 @@
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = function(evt) {
                 try {
-                    const contenido = event.target.result;
-                    if (file.name.endsWith('.json')) {
-                        const parsed = JSON.parse(contenido);
-                        if (parsed.transactions) {
-                            // Formato de tu JSON de referencia
-                            const txs = parsed.transactions.map(t => ({
-                                uuid: t.uuid || ('json-' + Math.random()),
-                                date: t.date || '2026-11-01',
-                                amount: t.amount || 0,
-                                category: Array.isArray(t.category) ? t.category : [t.category || 'General'],
-                                title: t.comment || t.title || 'Transacción'
-                            }));
-                            archivoTemporalImportado = { transacciones: txs };
-                        } else {
-                            archivoTemporalImportado = parsed;
-                        }
-                    } else if (file.name.endsWith('.csv')) {
-                        // Parser robusto para CSV de referencia
-                        const lineas = contenido.split('\n');
-                        let txs = [];
-                        for (let i = 1; i < lineas.length; i++) {
-                            const linea = lineas[i].trim();
-                            if (!linea) continue;
-                            
-                            // Separar considerando comillas CSV
-                            const partes = linea.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || linea.split(',');
-                            
-                            // Si el formato es de tu app original: "Transacción dividida","Fecha","Contraparte","Ingreso","Gasto","Categoría","Notas",...
-                            if (linea.includes('"')) {
-                                const cols = [];
-                                let inQuote = false;
-                                let cur = '';
-                                for (let c = 0; c < linea.length; c++) {
-                                    let char = linea[c];
-                                    if (char === '"') {
-                                        inQuote = !inQuote;
-                                    } else if (char === ',' && !inQuote) {
-                                        cols.push(cur.replace(/^"|"$/g, '').trim());
-                                        cur = '';
-                                    } else {
-                                        cur += char;
-                                    }
-                                }
-                                cols.push(cur.replace(/^"|"$/g, '').trim());
-
-                                if (cols.length >= 7) {
-                                    const fecha = cols[1] || '01/11/2026';
-                                    const ingreso = parseFloat(cols[3]) || 0;
-                                    const gasto = parseFloat(cols[4]) || 0;
-                                    const categoria = cols[5] || 'General';
-                                    const notas = cols[6] || 'Gasto CSV';
-
-                                    let montoFinal = 0;
-                                    if (ingreso > 0) montoFinal = ingreso;
-                                    else if (gasto > 0) montoFinal = -Math.abs(gasto);
-
-                                    if (montoFinal !== 0) {
-                                        txs.push({
-                                            uuid: 'csv-' + Math.random(),
-                                            date: fecha,
-                                            amount: montoFinal,
-                                            category: categoria.includes('>') ? categoria.split('>').map(s => s.trim()) : [categoria],
-                                            title: notas || 'Gasto importado'
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                        archivoTemporalImportado = { transacciones: txs };
-                    }
-
-                    if (archivoTemporalImportado && archivoTemporalImportado.transacciones) {
-                        document.getElementById('infoArchivoImportado').innerText = `Archivo cargado con éxito. Se detectaron ${archivoTemporalImportado.transacciones.length} transacciones. ¿Cómo deseas aplicar los datos?`;
-                        document.getElementById('modalImportarEstrategia').classList.remove('hidden');
-                        document.getElementById('modalImportarEstrategia').classList.add('flex');
-                    }
+                    const parsed = JSON.parse(evt.target.result);
+                    datosApp = parsed.transactions ? parsed : { ...datosApp, transacciones: parsed };
+                    guardarLocalStorage();
+                    renderizarTodo();
+                    alert("¡Datos importados con éxito!");
                 } catch(err) {
-                    alert("Error al procesar el archivo. Revisa el formato.");
-                    console.error(err);
+                    alert("Error al leer el archivo JSON.");
                 }
             };
             reader.readAsText(file);
             e.target.value = '';
-        }
-
-        function cancelarImportacion() {
-            archivoTemporalImportado = null;
-            document.getElementById('modalImportarEstrategia').classList.remove('flex');
-            document.getElementById('modalImportarEstrategia').classList.add('hidden');
-        }
-
-        function ejecutarImportacion(estrategia) {
-            if (!archivoTemporalImportado) return;
-
-            const nuevasTxs = archivoTemporalImportado.transacciones || [];
-
-            if (estrategia === 'cero') {
-                datosApp.transacciones = nuevasTxs;
-                if (archivoTemporalImportado.cuentas) datosApp.cuentas = archivoTemporalImportado.cuentas;
-            } else if (estrategia === 'agregar') {
-                datosApp.transacciones = datosApp.transacciones.concat(nuevasTxs);
-            } else if (estrategia === 'fusionar') {
-                let mapaTxs = new Map();
-                datosApp.transacciones.forEach(t => mapaTxs.set(t.uuid || t.id, t));
-                nuevasTxs.forEach(t => mapaTxs.set(t.uuid || t.id, t));
-                datosApp.transacciones = Array.from(mapaTxs.values());
-            }
-
-            guardarLocalStorage();
-            renderizarTodo();
-            cancelarImportacion();
-            alert("¡Importación completada con éxito!");
         }
     </script>
 </body>
