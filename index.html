@@ -288,10 +288,12 @@
             uuid: "app-gastos-local",
             label: "Mis Gastos Pro",
             currency: "CLP",
+            openingBalance: 0,
             cuentas: [
                 { id: '1', nombre: 'Cuenta Corriente' },
                 { id: '2', nombre: 'Efectivo' }
             ],
+            // Estructura jerárquica de Categorías y Subcategorías
             categorias: {
                 gasto: {
                     "Salud": ["Consulta médica", "Medicinas", "Odontólogo", "Hospital", "Farmacia"],
@@ -420,9 +422,9 @@
             alert("¡Transferencia realizada con éxito!");
         }
 
-        // --- CATEGORÍAS Y SUBCATEGORÍAS ---
+        // --- GESTIÓN DE CATEGORÍAS Y SUBCATEGORÍAS ---
         function abrirModalCategoria(tipo) {
-            tipoCatModalActual = tipo;
+            tipoCatModalActual = tipo; // 'principal' o 'sub'
             document.getElementById('tituloModalCategoria').innerText = tipo === 'principal' ? 'Agregar Categoría Principal' : 'Agregar Subcategoría';
             document.getElementById('nombreNuevaCatInput').value = '';
             document.getElementById('modalCategoria').classList.remove('hidden');
@@ -509,7 +511,7 @@
                 uuid: 'tx-' + Date.now(),
                 date: `${mesSeleccionado}-01`,
                 amount: amountFinal,
-                category: [catPrin, subCat],
+                category: [catPrin, subCat], // Guarda como arreglo [Categoría, Subcategoría]
                 cuentaId: cuentaId,
                 title: titulo,
                 status: "UNRECONCILED"
@@ -654,11 +656,12 @@
                     } else if (t.category) {
                         catStr = t.category;
                     }
+                    const tituloTx = t.title || t.comment || 'Transacción';
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
                     tr.innerHTML = `
                         <td class="p-2.5 text-slate-400">${t.date}</td>
-                        <td class="p-2.5 font-medium text-white">${t.title || t.comment || 'Transacción'}</td>
+                        <td class="p-2.5 font-medium text-white">${tituloTx}</td>
                         <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
                         <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
                         <td class="p-2.5 text-center flex justify-center gap-2">
@@ -735,7 +738,7 @@
             });
         }
 
-        // --- EXPORTAR E IMPORTAR SUPREMO (JSON Y CSV COMPATIBLES) ---
+        // --- EXPORTAR E IMPORTAR (JSON / CSV) ---
         function abrirModalExportar() { document.getElementById('modalExportar').classList.remove('hidden'); document.getElementById('modalExportar').classList.add('flex'); }
         function cerrarModalExportar() { document.getElementById('modalExportar').classList.remove('flex'); document.getElementById('modalExportar').classList.add('hidden'); }
 
@@ -770,7 +773,6 @@
 
                     if (file.name.endsWith('.json')) {
                         const parsed = JSON.parse(contenido);
-                        // Soporta el formato JSON de tu app con 'transactions' y array de categorías[cite: 21]
                         const rawTxs = parsed.transactions || parsed;
                         if (Array.isArray(rawTxs)) {
                             nuevasTxs = rawTxs.map(t => ({
@@ -782,7 +784,6 @@
                             }));
                         }
                     } else if (file.name.endsWith('.csv')) {
-                        // Parser robusto para CSV con comillas y delimitadores
                         const lineas = contenido.split('\n');
                         for (let i = 1; i < lineas.length; i++) {
                             const linea = lineas[i].trim();
@@ -804,7 +805,6 @@
                             }
                             cols.push(cur.replace(/^"|"$/g, '').trim());
 
-                            // Formato CSV estándar: Fecha(col 1), Ingreso(col 3), Gasto(col 4), Categoría(col 5), Notas(col 6)
                             if (cols.length >= 6) {
                                 const fecha = cols[1] || '23/10/2026';
                                 const ingreso = parseFloat(cols[3]) || 0;
