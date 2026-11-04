@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Gastos Pro - Gestión Mensual</title>
+    <title>Mis Gastos Pro - Control Financiero</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome Icons -->
@@ -29,7 +29,7 @@
                 <!-- Selector de Mes -->
                 <div class="flex items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                     <span class="text-xs text-slate-400"><i class="fa-solid fa-calendar-days text-emerald-400"></i> Mes:</span>
-                    <input type="month" id="filtroMes" onchange="cambiarMesActivo()" class="bg-transparent text-slate-200 text-sm outline-none cursor-pointer">
+                    <input type="month" id="filtroMes" onchange="renderizarTodo()" class="bg-transparent text-slate-200 text-sm outline-none cursor-pointer">
                 </div>
                 <!-- Botón Exportar JSON/CSV -->
                 <button onclick="abrirModalExportar()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-700 flex items-center gap-1.5" title="Exportar Datos">
@@ -83,11 +83,9 @@
 
             <!-- Gráfico de Torta por Categorías -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
-                <div class="flex justify-between items-center w-full mb-3">
-                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
-                    </h2>
-                </div>
+                <h2 class="text-base font-semibold text-white w-full mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
+                </h2>
                 <div class="w-64 h-64 relative flex items-center justify-center">
                     <canvas id="graficoTorta"></canvas>
                 </div>
@@ -152,7 +150,7 @@
                 </form>
             </div>
 
-            <!-- Listado de Transacciones del Mes con Opciones de Borrar Mes -->
+            <!-- Listado de Transacciones del Mes -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -209,11 +207,11 @@
         </div>
     </div>
 
-    <!-- Modal para Exportar (JSON o CSV) -->
+    <!-- Modal para Exportar -->
     <div id="modalExportar" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Exportar Datos</h3>
-            <p class="text-xs text-slate-400">Selecciona el formato en el que deseas exportar tus registros financieros:</p>
+            <p class="text-xs text-slate-400">Selecciona el formato de exportación:</p>
             <div class="grid grid-cols-2 gap-3 pt-2">
                 <button onclick="exportarArchivo('json')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold py-3 rounded-xl border border-slate-700 text-sm flex flex-col items-center gap-1">
                     <i class="fa-solid fa-file-code text-lg"></i> JSON
@@ -228,23 +226,23 @@
         </div>
     </div>
 
-    <!-- Modal para Estrategia de Importación (Fusionar / Empezar desde 0 / Agregar) -->
+    <!-- Modal para Estrategia de Importación -->
     <div id="modalImportarEstrategia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Importar Datos Detectados</h3>
             <p id="infoArchivoImportado" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">Archivo analizado correctamente. ¿Cómo deseas aplicar los datos?</p>
             <div class="space-y-2 pt-2">
                 <button onclick="ejecutarImportacion('fusionar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
-                    <span class="font-semibold text-emerald-400 text-sm block">🔄 Fusionar / Sobrescribir por UUID</span>
-                    <span class="text-[11px] text-slate-400 block">Actualiza los registros existentes y añade los nuevos sin duplicar.</span>
+                    <span class="font-semibold text-emerald-400 text-sm block">🔄 Fusionar / Sobrescribir por ID</span>
+                    <span class="text-[11px] text-slate-400 block">Actualiza registros existentes y añade nuevos sin duplicar.</span>
                 </button>
                 <button onclick="ejecutarImportacion('agregar')" class="w-full text-left bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border border-slate-700 transition">
                     <span class="font-semibold text-sky-400 text-sm block">➕ Agregar a los datos actuales</span>
-                    <span class="text-[11px] text-slate-400 block">Conserva todo lo que tienes y añade todas las transacciones del archivo.</span>
+                    <span class="text-[11px] text-slate-400 block">Conserva tus datos actuales y añade todas las transacciones del archivo.</span>
                 </button>
                 <button onclick="ejecutarImportacion('cero')" class="w-full text-left bg-rose-500/10 hover:bg-rose-500/20 p-3 rounded-xl border border-rose-500/30 transition">
                     <span class="font-semibold text-rose-400 text-sm block">🗑️ Empezar desde 0 (Reemplazar todo)</span>
-                    <span class="text-[11px] text-slate-400 block">Borra todos los datos actuales de la app y coloca únicamente los del archivo.</span>
+                    <span class="text-[11px] text-slate-400 block">Borra todo lo actual y coloca únicamente los datos del archivo.</span>
                 </button>
             </div>
             <div class="flex justify-end pt-2">
@@ -285,7 +283,7 @@
                 { id: '2', nombre: 'Efectivo' }
             ],
             categorias: {
-                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales'],
+                gasto: ['Comida', 'Transporte', 'Alojamiento', 'Coche', 'Estudios', 'Salud', 'Seguro', 'Cuidados', 'Gastos profesionales', 'Regalos', 'Niños', 'Gastos'],
                 ingreso: ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
             },
             transacciones: []
@@ -295,10 +293,8 @@
         let archivoTemporalImportado = null;
 
         window.onload = function() {
-            const hoy = new Date();
-            const mesStr = hoy.toISOString().slice(0, 7); // YYYY-MM
-            document.getElementById('filtroMes').value = mesStr;
-
+            // Inicializar con el mes actual o noviembre 2026 según tus datos de prueba
+            document.getElementById('filtroMes').value = '2026-11';
             cargarLocalStorage();
             renderizarTodo();
         };
@@ -308,8 +304,8 @@
             if (guardado) {
                 try {
                     datosApp = JSON.parse(guardado);
-                    if (!datosApp.cuentas) datosApp.cuentas = [{ id: '1', nombre: 'Principal' }];
-                    if (!datosApp.categorias) datosApp.categorias = { gasto: ['Comida', 'Transporte'], ingreso: ['Sueldo'] };
+                    if (!datosApp.cuentas) datosApp.cuentas = [{ id: '1', nombre: 'Cuenta Corriente' }];
+                    if (!datosApp.categorias) datosApp.categorias = { gasto: ['Comida'], ingreso: ['Sueldo'] };
                     if (!datosApp.transacciones) datosApp.transacciones = [];
                 } catch(e) { console.error(e); }
             }
@@ -319,11 +315,6 @@
             localStorage.setItem('mis_gastos_app_data', JSON.stringify(datosApp));
         }
 
-        function cambiarMesActivo() {
-            renderizarTodo();
-        }
-
-        // --- GESTIÓN DE CUENTAS Y CATEGORÍAS ---
         function abrirModalCuenta() { document.getElementById('modalCuenta').classList.remove('hidden'); document.getElementById('modalCuenta').classList.add('flex'); }
         function cerrarModalCuenta() { document.getElementById('modalCuenta').classList.remove('flex'); document.getElementById('modalCuenta').classList.add('hidden'); }
         function guardarNuevaCuenta() {
@@ -355,6 +346,8 @@
             const tipo = document.getElementById('tipoTransaccion').value;
             const selectCat = document.getElementById('categoriaTransaccion');
             selectCat.innerHTML = '';
+            // Asegurar categorías estándar por si vienen vacías
+            if (!datosApp.categorias[tipo]) datosApp.categorias[tipo] = ['General'];
             datosApp.categorias[tipo].forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat;
@@ -363,7 +356,6 @@
             });
         }
 
-        // --- REGLA DE ORO: SI NO HAY INGRESOS NO PERMITIR GASTAR ---
         function agregarTransaccion(e) {
             e.preventDefault();
             const tipo = document.getElementById('tipoTransaccion').value;
@@ -377,19 +369,16 @@
                 .reduce((acc, t) => acc + t.amount, 0);
 
             if (tipo === 'gasto' && ingresosTotales <= 0) {
-                alert("⚠️ REGLA DE CONTROL ACTIVADA: No tienes ningún ingreso registrado en la aplicación. Debes registrar al menos un ingreso antes de poder realizar gastos.");
+                alert("⚠️ REGLA DE CONTROL: No tienes ningún ingreso registrado. Debes registrar al menos un ingreso antes de poder realizar gastos.");
                 return;
             }
 
-            // Usar la fecha del mes seleccionado en el filtro superior
             const mesSeleccionado = document.getElementById('filtroMes').value; // YYYY-MM
-            const fechaTx = `${mesSeleccionado}-01`; // Día 1 por defecto del mes activo
-
             const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
 
             const nuevaTx = {
                 uuid: 'tx-' + Date.now(),
-                date: fechaTx,
+                date: `${mesSeleccionado}-01`,
                 amount: amountFinal,
                 category: [categoria],
                 cuentaId: cuentaId,
@@ -404,7 +393,6 @@
             guardarLocalStorage();
         }
 
-        // --- ACCIONES DE BORRADO Y EDICIÓN ---
         function eliminarTransaccion(uuid) {
             if (confirm("¿Estás seguro de eliminar este registro?")) {
                 datosApp.transacciones = datosApp.transacciones.filter(t => t.uuid !== uuid);
@@ -417,7 +405,7 @@
             const mesSeleccionado = document.getElementById('filtroMes').value;
             if (confirm(`¿Estás seguro de borrar TODAS las transacciones del mes ${mesSeleccionado}?`)) {
                 datosApp.transacciones = datosApp.transacciones.filter(t => {
-                    let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+                    let fechaIso = normalizarFechaIso(t.date);
                     return !fechaIso.startsWith(mesSeleccionado);
                 });
                 renderizarTodo();
@@ -427,7 +415,7 @@
         }
 
         function borrarTodaLaApp() {
-            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de borrar TODOS los datos de la aplicación? Se eliminarán cuentas, categorías y transacciones.")) {
+            if (confirm("⚠️ ADVERTENCIA: ¿Borrar TODOS los datos de la app? Se perderán cuentas y transacciones.")) {
                 localStorage.removeItem('mis_gastos_app_data');
                 datosApp = {
                     uuid: "app-gastos-local",
@@ -439,7 +427,7 @@
                     transacciones: []
                 };
                 renderizarTodo();
-                alert("Aplicación restablecida desde cero.");
+                alert("Aplicación restablecida.");
             }
         }
 
@@ -474,13 +462,17 @@
             }
         }
 
-        function convertirFechaDMY(dateStr) {
-            const partes = dateStr.split('/');
-            if (partes.length === 3) return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+        function normalizarFechaIso(dateStr) {
+            if (!dateStr) return '2026-11-01';
+            if (dateStr.includes('/')) {
+                const partes = dateStr.split('/');
+                if (partes.length === 3) {
+                    return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                }
+            }
             return dateStr;
         }
 
-        // --- RENDERIZADO Y GRÁFICO ---
         function renderizarTodo() {
             actualizarSelectCategorias();
 
@@ -504,14 +496,22 @@
                 if (t.amount > 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
                 if (t.amount < 0) saldosCuentas[cId] = (saldosCuentas[cId] || 0) + t.amount;
 
-                let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+                let fechaIso = normalizarFechaIso(t.date);
 
                 if (fechaIso.startsWith(mesSeleccionado)) {
                     if (t.amount > 0) ingresosMes += t.amount;
                     if (t.amount < 0) {
                         const valGasto = Math.abs(t.amount);
                         gastosMes += valGasto;
-                        const catPrincipal = Array.isArray(t.category) ? t.category[0] : (t.category || 'General');
+                        
+                        // Extraer categoría principal (compatible con arrays o strings)
+                        let catPrincipal = 'General';
+                        if (Array.isArray(t.category) && t.category.length > 0) {
+                            catPrincipal = t.category[0];
+                        } else if (typeof t.category === 'string') {
+                            catPrincipal = t.category;
+                        }
+                        
                         gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
                     }
                 }
@@ -533,12 +533,12 @@
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Renderizar tabla
+            // Renderizar tabla del mes
             const tbody = document.getElementById('tablaTransacciones');
             tbody.innerHTML = '';
             
             const txsMes = datosApp.transacciones.filter(t => {
-                let fechaIso = t.date.includes('/') ? convertirFechaDMY(t.date) : t.date;
+                let fechaIso = normalizarFechaIso(t.date);
                 return fechaIso.startsWith(mesSeleccionado);
             });
 
@@ -547,7 +547,13 @@
             } else {
                 txsMes.forEach(t => {
                     const esIngreso = t.amount > 0;
-                    const catStr = Array.isArray(t.category) ? t.category.join(' > ') : (t.category || 'General');
+                    let catStr = 'General';
+                    if (Array.isArray(t.category)) {
+                        catStr = t.category.join(' > ');
+                    } else if (t.category) {
+                        catStr = t.category;
+                    }
+
                     const tituloTx = t.title || t.comment || 'Transacción';
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
@@ -557,8 +563,8 @@
                         <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
                         <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
                         <td class="p-2.5 text-center flex justify-center gap-2">
-                            <button onclick="abrirModalEditar('${t.uuid}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="eliminarTransaccion('${t.uuid}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -626,9 +632,9 @@
             } else if (tipo === 'csv') {
                 let csvContent = "data:text/csv;charset=utf-8,uuid,date,amount,category,title\n";
                 datosApp.transacciones.forEach(t => {
-                    const catStr = Array.isArray(t.category) ? t.category.join('>') : t.category;
+                    const catStr = Array.isArray(t.category) ? t.category.join('>') : (t.category || 'General');
                     const titulo = t.title || t.comment || '';
-                    csvContent += `${t.uuid || ''},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
+                    csvContent += `${t.uuid || 'tx-' + Math.random()},${t.date},${t.amount},"${catStr}","${titulo}"\n`;
                 });
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
@@ -649,39 +655,46 @@
                     const contenido = event.target.result;
                     if (file.name.endsWith('.json')) {
                         const parsed = JSON.parse(contenido);
-                        archivoTemporalImportado = parsed.transactions ? parsed : { transacciones: parsed };
+                        // Compatible con tu formato JSON (que tiene 'transactions')
+                        if (parsed.transactions) {
+                            archivoTemporalImportado = parsed;
+                        } else if (Array.isArray(parsed)) {
+                            archivoTemporalImportado = { transacciones: parsed };
+                        } else {
+                            archivoTemporalImportado = { transacciones: [parsed] };
+                        }
                     } else if (file.name.endsWith('.csv')) {
-                        // Parser básico de CSV
                         const lineas = contenido.split('\n');
                         let txs = [];
                         for (let i = 1; i < lineas.length; i++) {
                             const linea = lineas[i].trim();
                             if (!linea) continue;
                             const partes = linea.split(',');
-                            if (partes.length >= 4) {
+                            if (partes.length >= 3) {
                                 txs.push({
                                     uuid: partes[0] || ('csv-' + Math.random()),
-                                    date: partes[1] || new Date().toISOString().split('T')[0],
+                                    date: partes[1] || '23/10/2026',
                                     amount: parseFloat(partes[2]) || 0,
-                                    category: [partes[3].replace(/"/g, '')],
-                                    title: partes[4] ? partes[4].replace(/"/g, '') : 'Importado CSV'
+                                    category: partes[3] ? [partes[3].replace(/"/g, '')] : ['General'],
+                                    title: partes[4] ? partes[4].replace(/"/g, '') : 'Movimiento CSV'
                                 });
                             }
                         }
                         archivoTemporalImportado = { transacciones: txs };
                     }
 
-                    if (archivoTemporalImportado) {
-                        document.getElementById('infoArchivoImportado').innerText = `Archivo cargado con éxito. Se detectaron ${archivoTemporalImportado.transacciones.length} transacciones. ¿Cómo deseas proceder?`;
+                    if (archivoTemporalImportado && archivoTemporalImportado.transacciones) {
+                        document.getElementById('infoArchivoImportado').innerText = `Archivo cargado con éxito. Se detectaron ${archivoTemporalImportado.transacciones.length} transacciones. ¿Cómo deseas aplicar los datos?`;
                         document.getElementById('modalImportarEstrategia').classList.remove('hidden');
                         document.getElementById('modalImportarEstrategia').classList.add('flex');
                     }
                 } catch(err) {
-                    alert("Error al leer el archivo de importación.");
+                    alert("Error al procesar el archivo JSON/CSV. Verifica que la estructura sea correcta.");
+                    console.error(err);
                 }
             };
             reader.readAsText(file);
-            e.target.value = ''; // Reset input
+            e.target.value = '';
         }
 
         function cancelarImportacion() {
@@ -693,25 +706,24 @@
         function ejecutarImportacion(estrategia) {
             if (!archivoTemporalImportado) return;
 
+            const nuevasTxs = archivoTemporalImportado.transacciones || [];
+
             if (estrategia === 'cero') {
-                // Empezar desde 0
-                datosApp.transacciones = archivoTemporalImportado.transacciones || [];
+                datosApp.transacciones = nuevasTxs;
                 if (archivoTemporalImportado.cuentas) datosApp.cuentas = archivoTemporalImportado.cuentas;
             } else if (estrategia === 'agregar') {
-                // Agregar al final
-                datosApp.transacciones = datosApp.transacciones.concat(archivoTemporalImportado.transacciones || []);
+                datosApp.transacciones = datosApp.transacciones.concat(nuevasTxs);
             } else if (estrategia === 'fusionar') {
-                // Fusionar por UUID (actualiza si existe, añade si no)
                 let mapaTxs = new Map();
-                datosApp.transacciones.forEach(t => mapaTxs.set(t.uuid, t));
-                (archivoTemporalImportado.transacciones || []).forEach(t => mapaTxs.set(t.uuid, t));
+                datosApp.transacciones.forEach(t => mapaTxs.set(t.uuid || t.id, t));
+                nuevasTxs.forEach(t => mapaTxs.set(t.uuid || t.id, t));
                 datosApp.transacciones = Array.from(mapaTxs.values());
             }
 
             guardarLocalStorage();
             renderizarTodo();
             cancelarImportacion();
-            alert("¡Importación completada con éxito!");
+            alert("¡Importación y fusión completadas con éxito!");
         }
     </script>
 </body>
