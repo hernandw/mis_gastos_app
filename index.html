@@ -61,7 +61,7 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Columna Izquierda: Cuentas, Lista de Resumen y Gráfico -->
+        <!-- Columna Izquierda: Cuentas, Lista de Resumen con Iconos y Gráfico -->
         <div class="lg:col-span-5 space-y-6">
             
             <!-- Estado Financiero y Cuentas -->
@@ -70,9 +70,14 @@
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
                         <i class="fa-solid fa-piggy-bank text-emerald-400"></i> Gestión de Cuentas
                     </h2>
-                    <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700">
-                        <i class="fa-solid fa-plus"></i> Cuenta
-                    </button>
+                    <div class="flex gap-1.5">
+                        <button onclick="abrirModalCuenta()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700" title="Nueva Cuenta">
+                            <i class="fa-solid fa-plus"></i> Cuenta
+                        </button>
+                        <button onclick="abrirModalGestionCuentas()" class="bg-slate-800 hover:bg-slate-700 text-rose-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700" title="Eliminar Cuenta">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800/80">
@@ -91,17 +96,22 @@
                 </div>
             </div>
 
-            <!-- Lista no editable de categorías con sus gastos sobre el gráfico de torta -->
+            <!-- Lista no editable de categorías con iconos y sus gastos -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-                <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-tags text-emerald-400"></i> Resumen por Categoría
-                </h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-emerald-400"></i> Resumen por Categoría
+                    </h2>
+                    <button onclick="abrirModalEliminarCatSub()" class="bg-slate-800 hover:bg-slate-700 text-rose-400 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700" title="Eliminar Categoría o Subcategoría">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar Cat/Sub
+                    </button>
+                </div>
                 <div id="listaResumenCategorias" class="space-y-2 max-h-60 overflow-y-auto pr-1 divide-y divide-slate-800/60">
                     <!-- Dinámico -->
                 </div>
             </div>
 
-            <!-- Gráfico de Torta con Info Central Integrada (Cero solapamiento) -->
+            <!-- Gráfico de Torta con Info Central Integrada por Plugin -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
                 <div class="flex justify-between items-center w-full mb-2">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -241,6 +251,23 @@
         </div>
     </div>
 
+    <!-- Modal para Eliminar Cuentas -->
+    <div id="modalGestionCuentas" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Eliminar Cuenta</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Selecciona la cuenta a eliminar</label>
+                <select id="selectCuentaEliminar" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <!-- Dinámico -->
+                </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalGestionCuentas()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="ejecutarEliminarCuenta()" class="px-4 py-2 rounded-xl text-sm bg-rose-500 font-semibold text-slate-950">Eliminar Cuenta</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para Transferencias -->
     <div id="modalTransferencia" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
@@ -274,6 +301,36 @@
             <div class="flex justify-end gap-2">
                 <button onclick="cerrarModalCategoria()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
                 <button onclick="guardarNuevaCategoriaSub()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Eliminar Categoría o Subcategoría -->
+    <div id="modalEliminarCatSub" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-semibold text-white">Eliminar Categoría o Subcategoría</h3>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                <select id="delTipoTx" onchange="actualizarSelectsEliminarCat()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="gasto">Gasto</option>
+                    <option value="ingreso">Ingreso</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Categoría Principal</label>
+                <select id="delCatPrincipal" onchange="actualizarSelectsEliminarSub()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <!-- Dinámico -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Subcategoría (Opcional si deseas borrar solo una sub)</label>
+                <select id="delSubcategoria" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="">-- Borrar Categoría Completa --</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalEliminarCatSub()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="ejecutarEliminarCatSub()" class="px-4 py-2 rounded-xl text-sm bg-rose-500 font-semibold text-slate-950">Eliminar</button>
             </div>
         </div>
     </div>
@@ -391,6 +448,30 @@
         let archivoTemporalImportado = null;
         let categoriaSeleccionadaGrafico = null;
 
+        // Diccionario de iconos FontAwesome para cada categoría principal
+        const iconosCategorias = {
+            "Salud": "fa-kit-medical",
+            "Comida": "fa-utensils",
+            "Transporte": "fa-car-side",
+            "Alojamiento": "fa-house",
+            "Estudios": "fa-graduation-cap",
+            "Cuidados": "fa-user-nurse",
+            "Gastos profesionales": "fa-briefcase",
+            "Seguro": "fa-shield-halved",
+            "Coche": "fa-car",
+            "Regalos": "fa-gift",
+            "Niños": "fa-child",
+            "Gastos": "fa-file-invoice-dollar",
+            "Sueldo": "fa-money-bill-wave",
+            "Freelance": "fa-laptop-code",
+            "Inversiones": "fa-chart-line",
+            "Otros": "fa-circle-dollar-to-slot"
+        };
+
+        function obtenerIconoCategoria(cat) {
+            return iconosCategorias[cat] || "fa-tag";
+        }
+
         window.onload = function() {
             const hoyIso = new Date().toISOString().slice(0, 10);
             document.getElementById('fechaTransaccion').value = hoyIso;
@@ -432,6 +513,35 @@
                 cerrarModalCuenta();
                 renderizarTodo();
                 guardarLocalStorage();
+            }
+        }
+
+        function abrirModalGestionCuentas() {
+            const select = document.getElementById('selectCuentaEliminar');
+            select.innerHTML = '';
+            datosApp.cuentas.forEach(c => {
+                select.appendChild(new Option(c.nombre, c.id));
+            });
+            document.getElementById('modalGestionCuentas').classList.remove('hidden');
+            document.getElementById('modalGestionCuentas').classList.add('flex');
+        }
+        function cerrarModalGestionCuentas() {
+            document.getElementById('modalGestionCuentas').classList.remove('flex');
+            document.getElementById('modalGestionCuentas').classList.add('hidden');
+        }
+        function ejecutarEliminarCuenta() {
+            const cuentaId = document.getElementById('selectCuentaEliminar').value;
+            if (datosApp.cuentas.length <= 1) {
+                alert("Debes conservar al menos una cuenta.");
+                return;
+            }
+            if (confirm("¿Estás seguro de eliminar esta cuenta? Se eliminarán también las transacciones asociadas.")) {
+                datosApp.cuentas = datosApp.cuentas.filter(c => c.id !== cuentaId);
+                datosApp.transacciones = datosApp.transacciones.filter(t => t.cuentaId !== cuentaId);
+                cerrarModalGestionCuentas();
+                renderizarTodo();
+                guardarLocalStorage();
+                alert("Cuenta eliminada con éxito.");
             }
         }
 
@@ -494,7 +604,7 @@
             alert("¡Transferencia realizada con éxito!");
         }
 
-        // --- GESTIÓN DE CATEGORÍAS Y SUBCATEGORÍAS ---
+        // --- GESTIÓN DE CATEGORÍAS Y ELIMINACIÓN ---
         function abrirModalCategoria(tipo) {
             tipoCatModalActual = tipo;
             document.getElementById('tituloModalCategoria').innerText = tipo === 'principal' ? 'Agregar Categoría Principal' : 'Agregar Subcategoría';
@@ -526,6 +636,67 @@
             cerrarModalCategoria();
             actualizarSelectCategorias();
             guardarLocalStorage();
+        }
+
+        function abrirModalEliminarCatSub() {
+            actualizarSelectsEliminarCat();
+            document.getElementById('modalEliminarCatSub').classList.remove('hidden');
+            document.getElementById('modalEliminarCatSub').classList.add('flex');
+        }
+        function cerrarModalEliminarCatSub() {
+            document.getElementById('modalEliminarCatSub').classList.remove('flex');
+            document.getElementById('modalEliminarCatSub').classList.add('hidden');
+        }
+        function actualizarSelectsEliminarCat() {
+            const tipo = document.getElementById('delTipoTx').value;
+            const selectPrin = document.getElementById('delCatPrincipal');
+            selectPrin.innerHTML = '';
+            const cats = datosApp.categorias[tipo] || {};
+            Object.keys(cats).forEach(cat => {
+                selectPrin.appendChild(new Option(cat, cat));
+            });
+            actualizarSelectsEliminarSub();
+        }
+        function actualizarSelectsEliminarSub() {
+            const tipo = document.getElementById('delTipoTx').value;
+            const catPrin = document.getElementById('delCatPrincipal').value;
+            const selectSub = document.getElementById('delSubcategoria');
+            selectSub.innerHTML = '<option value="">-- Borrar Categoría Completa --</option>';
+            
+            const subs = (datosApp.categorias[tipo] && datosApp.categorias[tipo][catPrin]) ? datosApp.categorias[tipo][catPrin] : [];
+            subs.forEach(sub => {
+                selectSub.appendChild(new Option(sub, sub));
+            });
+        }
+        function ejecutarEliminarCatSub() {
+            const tipo = document.getElementById('delTipoTx').value;
+            const catPrin = document.getElementById('delCatPrincipal').value;
+            const subCat = document.getElementById('delSubcategoria').value;
+
+            if (!catPrin) return;
+
+            if (subCat) {
+                // Eliminar solo la subcategoría
+                if (confirm(`¿Estás seguro de eliminar la subcategoría "${subCat}" de "${catPrin}"?`)) {
+                    datosApp.categorias[tipo][catPrin] = datosApp.categorias[tipo][catPrin].filter(s => s !== subCat);
+                    if (datosApp.categorias[tipo][catPrin].length === 0) {
+                        datosApp.categorias[tipo][catPrin] = ['General'];
+                    }
+                    cerrarModalEliminarCatSub();
+                    renderizarTodo();
+                    guardarLocalStorage();
+                    alert("Subcategoría eliminada con éxito.");
+                }
+            } else {
+                // Eliminar categoría principal completa
+                if (confirm(`⚠️ ¿Estás seguro de eliminar la categoría principal "${catPrin}" y todas sus subcategorías?`)) {
+                    delete datosApp.categorias[tipo][catPrin];
+                    cerrarModalEliminarCatSub();
+                    renderizarTodo();
+                    guardarLocalStorage();
+                    alert("Categoría eliminada con éxito.");
+                }
+            }
         }
 
         function actualizarSelectCategorias() {
@@ -763,7 +934,7 @@
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Renderizar la lista no editable de categorías con sus gastos sobre el gráfico (ordenada de mayor a menor gasto)
+            // Renderizar la lista no editable de categorías con iconos y sus gastos
             const listaResumenDiv = document.getElementById('listaResumenCategorias');
             listaResumenDiv.innerHTML = '';
             
@@ -773,11 +944,12 @@
                 listaResumenDiv.innerHTML = '<div class="p-3 text-center text-slate-500 italic text-xs">Sin gastos este mes.</div>';
             } else {
                 categoriasOrdenadas.forEach(([catNombre, catMonto]) => {
+                    const iconoFa = obtenerIconoCategoria(catNombre);
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = "flex justify-between items-center py-2 px-1 text-xs";
+                    itemDiv.className = "flex justify-between items-center py-2.5 px-1 text-xs";
                     itemDiv.innerHTML = `
-                        <span class="font-medium text-slate-200 flex items-center gap-2">
-                            <i class="fa-solid fa-circle text-[6px] text-emerald-400"></i> ${catNombre}
+                        <span class="font-medium text-slate-200 flex items-center gap-2.5">
+                            <i class="fa-solid ${iconoFa} text-emerald-400 text-sm w-4 text-center"></i> ${catNombre}
                         </span>
                         <span class="font-bold text-rose-400">-$${catMonto.toLocaleString()}</span>
                     `;
