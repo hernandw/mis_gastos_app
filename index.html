@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js para el gráfico de torta -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body class="h-full text-slate-100 flex flex-col font-sans antialiased">
 
@@ -22,7 +28,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Mis Gastos Pro</h1>
-                    <p class="text-xs text-slate-400">Control mensual, cuentas, transferencias y respaldo JSON/CSV</p>
+                    <p class="text-xs text-slate-400">Control mensual, cuentas, categorías, subcategorías y respaldo JSON/CSV</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -85,11 +91,14 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Torta con Porcentajes Visibles -->
+            <!-- Gráfico de Torta con Info Central Integrada (Cero Solapamientos) -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
-                <h2 class="text-base font-semibold text-white w-full mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría (%)
-                </h2>
+                <div class="flex justify-between items-center w-full mb-2">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-emerald-400"></i> Distribución de Gastos
+                    </h2>
+                    <span class="text-[10px] text-slate-400 italic">Haz clic en una sección</span>
+                </div>
                 <div class="w-64 h-64 relative flex items-center justify-center">
                     <canvas id="graficoTorta"></canvas>
                 </div>
@@ -97,10 +106,46 @@
 
         </div>
 
-        <!-- Columna Derecha: Transacciones y Registro -->
+        <!-- Columna Derecha: Listado (Primero) y Formulario de Registro (Después) -->
         <div class="lg:col-span-7 space-y-6">
             
-            <!-- Formulario de Transacción -->
+            <!-- Listado de Transacciones con Ordenamiento -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <select id="criterioOrden" onchange="renderizarTodo()" class="bg-slate-950 text-xs text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-800 outline-none cursor-pointer">
+                            <option value="fecha">Ordenar por: Fecha</option>
+                            <option value="monto">Ordenar por: Gasto (Monto)</option>
+                            <option value="categoria">Ordenar por: Categoría</option>
+                        </select>
+                        <button onclick="borrarMesActual()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-2.5 py-1.5 rounded-lg border border-rose-500/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i> Borrar Mes
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
+                            <tr>
+                                <th class="p-2.5">Fecha</th>
+                                <th class="p-2.5">Título</th>
+                                <th class="p-2.5">Categoría > Subcategoría</th>
+                                <th class="p-2.5 text-right">Monto</th>
+                                <th class="p-2.5 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Formulario de Transacción con Selector de Fecha -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -110,7 +155,7 @@
                 </div>
                 
                 <form id="formTransaccion" onsubmit="agregarTransaccion(event)" class="space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
                             <select id="tipoTransaccion" onchange="actualizarSelectCategorias()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
@@ -123,6 +168,10 @@
                             <select id="cuentaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
                                 <!-- Dinámico -->
                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Fecha</label>
+                            <input type="date" id="fechaTransaccion" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 cursor-pointer">
                         </div>
                     </div>
 
@@ -164,35 +213,6 @@
                         <i class="fa-solid fa-check"></i> Registrar Transacción
                     </button>
                 </form>
-            </div>
-
-            <!-- Listado de Transacciones del Mes -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
-                    </h2>
-                    <button onclick="borrarMesActual()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-2.5 py-1.5 rounded-lg border border-rose-500/30 flex items-center gap-1.5">
-                        <i class="fa-solid fa-trash-can"></i> Borrar este Mes
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
-                            <tr>
-                                <th class="p-2.5">Fecha</th>
-                                <th class="p-2.5">Título</th>
-                                <th class="p-2.5">Categoría > Subcategoría</th>
-                                <th class="p-2.5 text-right">Monto</th>
-                                <th class="p-2.5 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
-                            <!-- Dinámico -->
-                        </tbody>
-                    </table>
-                </div>
             </div>
 
         </div>
@@ -289,7 +309,7 @@
 
     <!-- Modal Editar Gasto -->
     <div id="modalEditarGasto" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 class="text-base font-semibold text-white">Editar Transacción</h3>
             <input type="hidden" id="editUuid">
             <div>
@@ -300,9 +320,23 @@
                 <label class="block text-xs font-medium text-slate-400 mb-1">Monto (CLP)</label>
                 <input type="number" id="editMonto" step="any" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
             </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Categoría Principal</label>
+                    <select id="editCategoriaPrincipal" onchange="actualizarSelectEditSubcategorias()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <!-- Dinámico -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Subcategoría</label>
+                    <select id="editSubcategoria" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <!-- Dinámico -->
+                    </select>
+                </div>
+            </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="cerrarModalEditar()" class="px-4 py-2 rounded-xl text-sm bg-slate-800 text-slate-300">Cancelar</button>
-                <button onclick="guardarEdicionGasto()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar</button>
+                <button onclick="guardarEdicionGasto()" class="px-4 py-2 rounded-xl text-sm bg-emerald-500 font-semibold text-slate-950">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -345,9 +379,13 @@
         let chartInstance = null;
         let tipoCatModalActual = 'principal';
         let archivoTemporalImportado = null;
+        let categoriaSeleccionadaGrafico = null;
 
         window.onload = function() {
-            document.getElementById('filtroMes').value = '2026-11';
+            const hoyIso = new Date().toISOString().slice(0, 10);
+            document.getElementById('fechaTransaccion').value = hoyIso;
+            document.getElementById('filtroMes').value = hoyIso.slice(0, 7);
+
             cargarLocalStorage();
             renderizarTodo();
         };
@@ -415,11 +453,11 @@
             if (origenId === destinoId) { alert("La cuenta de origen y destino no pueden ser la misma."); return; }
 
             const cOrigen = datosApp.cuentas.find(c => c.id === origenId);
-            const mesSeleccionado = document.getElementById('filtroMes').value;
+            const fechaActual = new Date().toISOString().slice(0, 10);
 
             datosApp.transacciones.push({
                 uuid: 'tx-tr-out-' + Date.now(),
-                date: `${mesSeleccionado}-01`,
+                date: fechaActual,
                 amount: -monto,
                 category: ['Transferencias', 'Salida'],
                 cuentaId: origenId,
@@ -430,7 +468,7 @@
             if (destinoId !== 'retiro') {
                 datosApp.transacciones.push({
                     uuid: 'tx-tr-in-' + Date.now(),
-                    date: `${mesSeleccionado}-01`,
+                    date: fechaActual,
                     amount: monto,
                     category: ['Transferencias', 'Entrada'],
                     cuentaId: destinoId,
@@ -514,6 +552,7 @@
             e.preventDefault();
             const tipo = document.getElementById('tipoTransaccion').value;
             const cuentaId = document.getElementById('cuentaTransaccion').value;
+            const fechaInput = document.getElementById('fechaTransaccion').value;
             const catPrin = document.getElementById('categoriaPrincipal').value;
             const subCat = document.getElementById('subcategoriaTransaccion').value;
             const titulo = document.getElementById('tituloTransaccion').value.trim();
@@ -528,12 +567,11 @@
                 return;
             }
 
-            const mesSeleccionado = document.getElementById('filtroMes').value;
             const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
 
             datosApp.transacciones.push({
                 uuid: 'tx-' + Date.now(),
-                date: `${mesSeleccionado}-01`,
+                date: fechaInput || new Date().toISOString().slice(0, 10),
                 amount: amountFinal,
                 category: [catPrin, subCat],
                 cuentaId: cuentaId,
@@ -571,29 +609,80 @@
             }
         }
 
+        // --- EDICIÓN COMPLETA ---
         function abrirModalEditar(uuid) {
             const tx = datosApp.transacciones.find(t => (t.uuid || t.id) === uuid);
             if (tx) {
                 document.getElementById('editUuid').value = (tx.uuid || tx.id);
                 document.getElementById('editTitulo').value = tx.title || tx.comment || '';
                 document.getElementById('editMonto').value = Math.abs(tx.amount);
+
+                const tipoTx = tx.amount > 0 ? 'ingreso' : 'gasto';
+
+                const selectPrin = document.getElementById('editCategoriaPrincipal');
+                selectPrin.innerHTML = '';
+                const cats = datosApp.categorias[tipoTx] || {};
+                Object.keys(cats).forEach(cat => {
+                    selectPrin.appendChild(new Option(cat, cat));
+                });
+
+                let currentCatPrin = 'General';
+                let currentSubCat = 'General';
+                if (Array.isArray(tx.category) && tx.category.length > 0) {
+                    currentCatPrin = tx.category[0];
+                    currentSubCat = tx.category[1] || 'General';
+                } else if (typeof tx.category === 'string') {
+                    currentCatPrin = tx.category.split('>')[0].trim();
+                    currentSubCat = tx.category.split('>')[1] ? tx.category.split('>')[1].trim() : 'General';
+                }
+
+                if (cats[currentCatPrin]) {
+                    selectPrin.value = currentCatPrin;
+                }
+
+                actualizarSelectEditSubcategorias();
+                document.getElementById('editSubcategoria').value = currentSubCat;
+
                 document.getElementById('modalEditarGasto').classList.remove('hidden');
                 document.getElementById('modalEditarGasto').classList.add('flex');
             }
         }
+
+        function actualizarSelectEditSubcategorias() {
+            const selectPrin = document.getElementById('editCategoriaPrincipal').value;
+            const selectSub = document.getElementById('editSubcategoria');
+            selectSub.innerHTML = '';
+
+            let subs = ['General'];
+            for (let tipo in datosApp.categorias) {
+                if (datosApp.categorias[tipo][selectPrin]) {
+                    subs = datosApp.categorias[tipo][selectPrin];
+                    break;
+                }
+            }
+
+            subs.forEach(sub => {
+                selectSub.appendChild(new Option(sub, sub));
+            });
+        }
+
         function cerrarModalEditar() {
             document.getElementById('modalEditarGasto').classList.remove('flex');
             document.getElementById('modalEditarGasto').classList.add('hidden');
         }
+
         function guardarEdicionGasto() {
             const uuid = document.getElementById('editUuid').value;
             const nuevoTitulo = document.getElementById('editTitulo').value.trim();
             const nuevoMonto = parseFloat(document.getElementById('editMonto').value);
+            const nuevaCatPrin = document.getElementById('editCategoriaPrincipal').value;
+            const nuevaSubCat = document.getElementById('editSubcategoria').value;
 
             const tx = datosApp.transacciones.find(t => (t.uuid || t.id) === uuid);
             if (tx && nuevoTitulo && !isNaN(nuevoMonto)) {
                 tx.title = nuevoTitulo;
                 tx.amount = tx.amount > 0 ? nuevoMonto : -nuevoMonto;
+                tx.category = [nuevaCatPrin, nuevaSubCat];
                 guardarLocalStorage();
                 renderizarTodo();
                 cerrarModalEditar();
@@ -664,10 +753,27 @@
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Tabla del mes
+            // Filtrar transacciones del mes
+            let txsMes = datosApp.transacciones.filter(t => normalizarFechaIso(t.date).startsWith(mesSeleccionado));
+
+            // Ordenamiento
+            const criterio = document.getElementById('criterioOrden').value;
+            txsMes.sort((a, b) => {
+                if (criterio === 'fecha') {
+                    return new Date(normalizarFechaIso(b.date)) - new Date(normalizarFechaIso(a.date));
+                } else if (criterio === 'monto') {
+                    return Math.abs(b.amount) - Math.abs(a.amount);
+                } else if (criterio === 'categoria') {
+                    let catA = Array.isArray(a.category) ? a.category[0] : (a.category || '');
+                    let catB = Array.isArray(b.category) ? b.category[0] : (b.category || '');
+                    return catA.localeCompare(catB);
+                }
+                return 0;
+            });
+
+            // Renderizar tabla
             const tbody = document.getElementById('tablaTransacciones');
             tbody.innerHTML = '';
-            const txsMes = datosApp.transacciones.filter(t => normalizarFechaIso(t.date).startsWith(mesSeleccionado));
 
             if (txsMes.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones en este mes.</td></tr>';
@@ -689,8 +795,8 @@
                         <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
                         <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
                         <td class="p-2.5 text-center flex justify-center gap-2">
-                            <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -721,6 +827,46 @@
 
             const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8', '#f97316'];
 
+            // Plugin nativo para dibujar la información central sin solapamiento
+            const pluginCentroDona = {
+                id: 'pluginCentroDona',
+                afterDraw(chart) {
+                    const { ctx } = chart;
+                    ctx.save();
+                    
+                    let tituloTexto = "Total Gastos";
+                    let montoTexto = "$" + totalGastosMes.toLocaleString();
+                    let porcentajeTexto = "100%";
+
+                    if (categoriaSeleccionadaGrafico && gastosCat[categoriaSeleccionadaGrafico] !== undefined) {
+                        tituloTexto = categoriaSeleccionadaGrafico;
+                        let valCat = gastosCat[categoriaSeleccionadaGrafico];
+                        montoTexto = "$" + valCat.toLocaleString();
+                        porcentajeTexto = ((valCat / totalGastosMes) * 100).toFixed(1) + '%';
+                    }
+
+                    const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                    const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText(tituloTexto, centerX, centerY - 14);
+
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(montoTexto, centerX, centerY + 1);
+
+                    ctx.font = '11px sans-serif';
+                    ctx.fillStyle = '#10b981';
+                    ctx.fillText(porcentajeTexto, centerX, centerY + 16);
+
+                    ctx.restore();
+                }
+            };
+
             const pluginPorcentajes = {
                 id: 'pluginPorcentajes',
                 afterDatasetsDraw(chart) {
@@ -730,9 +876,9 @@
                         const valor = data.datasets[0].data[index];
                         const porcentaje = ((valor / totalGastosMes) * 100).toFixed(1) + '%';
                         
-                        if (parseFloat(porcentaje) > 3) {
+                        if (parseFloat(porcentaje) > 4) {
                             ctx.fillStyle = '#ffffff';
-                            ctx.font = 'bold 10px sans-serif';
+                            ctx.font = 'bold 9px sans-serif';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
                             ctx.fillText(porcentaje, x, y);
@@ -748,17 +894,29 @@
                     datasets: [{
                         data: data,
                         backgroundColor: colores.slice(0, labels.length),
-                        borderWidth: 0
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '62%',
                     plugins: {
                         legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 9 } } }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            categoriaSeleccionadaGrafico = labels[index];
+                            renderizarTodo();
+                        } else {
+                            categoriaSeleccionadaGrafico = null;
+                            renderizarTodo();
+                        }
                     }
                 },
-                plugins: [pluginPorcentajes]
+                plugins: [pluginCentroDona, pluginPorcentajes]
             });
         }
 
@@ -775,9 +933,9 @@
                 dl.setAttribute("download", `mis_gastos_backup_${new Date().toISOString().slice(0,10)}.json`);
                 document.body.appendChild(dl); dl.click(); dl.remove();
             } else if (tipo === 'csv') {
-                let csv = "uuid,date,amount,category,title\n";
+                let csv = "uuid,date,amount,category,title\\n";
                 datosApp.transacciones.forEach(t => {
-                    csv += `${t.uuid || ''},${t.date},${t.amount},"${Array.isArray(t.category) ? t.category.join('>') : t.category}","${t.title || ''}"\n`;
+                    csv += `${t.uuid || ''},${t.date},${t.amount},"${Array.isArray(t.category) ? t.category.join('>') : t.category}","${t.title || ''}"\\n`;
                 });
                 const dl = document.createElement('a');
                 dl.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
@@ -801,14 +959,14 @@
                         if (Array.isArray(rawTxs)) {
                             nuevasTxs = rawTxs.map(t => ({
                                 uuid: t.uuid || ('json-' + Math.random()),
-                                date: t.date || '23/10/2026',
+                                date: t.date || '2026-11-01',
                                 amount: t.amount !== undefined ? t.amount : (t.gasto ? -Math.abs(t.gasto) : (t.ingreso || 0)),
                                 category: Array.isArray(t.category) ? t.category : (t.category ? t.category.split('>') : ['General', 'General']),
                                 title: t.comment || t.title || t.notes || 'Transacción'
                             }));
                         }
                     } else if (file.name.endsWith('.csv')) {
-                        const lineas = contenido.split('\n');
+                        const lineas = contenido.split('\\n');
                         for (let i = 1; i < lineas.length; i++) {
                             const linea = lineas[i].trim();
                             if (!linea) continue;
@@ -830,7 +988,7 @@
                             cols.push(cur.replace(/^"|"$/g, '').trim());
 
                             if (cols.length >= 6) {
-                                const fecha = cols[1] || '23/10/2026';
+                                const fecha = cols[1] || '2026-11-01';
                                 const ingreso = parseFloat(cols[3]) || 0;
                                 const gasto = parseFloat(cols[4]) || 0;
                                 const categoriaStr = cols[5] || 'General';
