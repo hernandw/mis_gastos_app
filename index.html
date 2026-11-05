@@ -736,14 +736,7 @@
             const titulo = document.getElementById('tituloTransaccion').value.trim();
             const montoInput = parseFloat(document.getElementById('montoTransaccion').value);
 
-            const ingresosTotales = datosApp.transacciones
-                .filter(t => t.amount > 0)
-                .reduce((acc, t) => acc + t.amount, 0);
-
-            if (tipo === 'gasto' && ingresosTotales <= 0) {
-                alert("⚠️ REGLA DE CONTROL: No tienes ningún ingreso registrado. Debes registrar al menos un ingreso antes de poder realizar gastos.");
-                return;
-            }
+            // RESTRICCIÓN DE INGRESOS ELIMINADA: Se permite registrar gastos libremente.
 
             const amountFinal = tipo === 'ingreso' ? Math.abs(montoInput) : -Math.abs(montoInput);
 
