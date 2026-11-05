@@ -59,10 +59,10 @@
     </header>
 
     <!-- Main Container -->
-    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        <!-- Columna Izquierda: Cuentas, Lista de Resumen con Iconos y Gráfico -->
-        <div class="lg:col-span-5 space-y-6 flex flex-col">
+        <!-- Columna Izquierda: Cuentas, Resumen e Info del Gráfico -->
+        <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
             
             <!-- Estado Financiero y Cuentas -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
@@ -96,8 +96,8 @@
                 </div>
             </div>
 
-            <!-- Lista no editable de categorías con iconos y sus gastos -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+            <!-- Lista no editable de categorías con iconos coloridos y sus gastos -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3 flex-grow flex flex-col">
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
                         <i class="fa-solid fa-tags text-emerald-400"></i> Resumen por Categoría
@@ -106,7 +106,7 @@
                         <i class="fa-solid fa-trash-can"></i> Eliminar Cat/Sub
                     </button>
                 </div>
-                <div id="listaResumenCategorias" class="space-y-2 max-h-60 overflow-y-auto pr-1 divide-y divide-slate-800/60">
+                <div id="listaResumenCategorias" class="space-y-2 flex-grow max-h-56 overflow-y-auto pr-1 divide-y divide-slate-800/60">
                     <!-- Dinámico -->
                 </div>
             </div>
@@ -126,7 +126,7 @@
 
         </div>
 
-        <!-- Columna Derecha: Formulario de Registro (Primero) y Movimientos del Mes Alineados (Después) -->
+        <!-- Columna Derecha: Formulario de Registro (Primero) y Movimientos del Mes (Después) -->
         <div class="lg:col-span-7 space-y-6 flex flex-col justify-between">
             
             <!-- Formulario de Transacción con Selector de Fecha -->
@@ -199,7 +199,7 @@
                 </form>
             </div>
 
-            <!-- Listado de Transacciones con Ordenamiento (Alineado abajo con la torta) -->
+            <!-- Listado de Transacciones con Ordenamiento (Alineado perfectamente abajo) -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-grow flex flex-col">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -217,7 +217,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto flex-grow max-h-[340px] overflow-y-auto">
+                <div class="overflow-x-auto flex-grow max-h-[360px] overflow-y-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
                             <tr>
@@ -448,28 +448,27 @@
         let archivoTemporalImportado = null;
         let categoriaSeleccionadaGrafico = null;
 
-        // Diccionario de iconos FontAwesome para cada categoría principal
-        const iconosCategorias = {
-            "Salud": "fa-kit-medical",
-            "Comida": "fa-utensils",
-            "Transporte": "fa-car-side",
-            "Alojamiento": "fa-house",
-            "Estudios": "fa-graduation-cap",
-            "Cuidados": "fa-user-nurse",
-            "Gastos profesionales": "fa-briefcase",
-            "Seguro": "fa-shield-halved",
-            "Coche": "fa-car",
-            "Regalos": "fa-gift",
-            "Niños": "fa-child",
-            "Gastos": "fa-file-invoice-dollar",
-            "Sueldo": "fa-money-bill-wave",
-            "Freelance": "fa-laptop-code",
-            "Inversiones": "fa-chart-line",
-            "Otros": "fa-circle-dollar-to-slot"
+        const configCategorias = {
+            "Salud": { icon: "fa-kit-medical", color: "text-rose-400 bg-rose-500/10 border-rose-500/20" },
+            "Comida": { icon: "fa-utensils", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
+            "Transporte": { icon: "fa-car-side", color: "text-sky-400 bg-sky-500/10 border-sky-500/20" },
+            "Alojamiento": { icon: "fa-house", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+            "Estudios": { icon: "fa-graduation-cap", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
+            "Cuidados": { icon: "fa-user-nurse", color: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
+            "Gastos profesionales": { icon: "fa-briefcase", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
+            "Seguro": { icon: "fa-shield-halved", color: "text-teal-400 bg-teal-500/10 border-teal-500/20" },
+            "Coche": { icon: "fa-car", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
+            "Regalos": { icon: "fa-gift", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
+            "Niños": { icon: "fa-child", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
+            "Gastos": { icon: "fa-file-invoice-dollar", color: "text-red-400 bg-red-500/10 border-red-500/20" },
+            "Sueldo": { icon: "fa-money-bill-wave", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+            "Freelance": { icon: "fa-laptop-code", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+            "Inversiones": { icon: "fa-chart-line", color: "text-green-400 bg-green-500/10 border-green-500/20" },
+            "Otros": { icon: "fa-circle-dollar-to-slot", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" }
         };
 
-        function obtenerIconoCategoria(cat) {
-            return iconosCategorias[cat] || "fa-tag";
+        function obtenerConfigCategoria(cat) {
+            return configCategorias[cat] || { icon: "fa-tag", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" };
         }
 
         window.onload = function() {
@@ -932,7 +931,7 @@
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
-            // Renderizar la lista no editable de categorías con iconos y sus gastos
+            // Renderizar la lista no editable de categorías con iconos coloridos
             const listaResumenDiv = document.getElementById('listaResumenCategorias');
             listaResumenDiv.innerHTML = '';
             
@@ -942,12 +941,15 @@
                 listaResumenDiv.innerHTML = '<div class="p-3 text-center text-slate-500 italic text-xs">Sin gastos este mes.</div>';
             } else {
                 categoriasOrdenadas.forEach(([catNombre, catMonto]) => {
-                    const iconoFa = obtenerIconoCategoria(catNombre);
+                    const cfg = obtenerConfigCategoria(catNombre);
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = "flex justify-between items-center py-2.5 px-1 text-xs";
+                    itemDiv.className = "flex justify-between items-center py-2 px-1 text-xs";
                     itemDiv.innerHTML = `
                         <span class="font-medium text-slate-200 flex items-center gap-2.5">
-                            <i class="fa-solid ${iconoFa} text-emerald-400 text-sm w-4 text-center"></i> ${catNombre}
+                            <span class="w-6 h-6 rounded-lg flex items-center justify-center border ${cfg.color}">
+                                <i class="fa-solid ${cfg.icon} text-[11px]"></i>
+                            </span>
+                            ${catNombre}
                         </span>
                         <span class="font-bold text-rose-400">-$${catMonto.toLocaleString()}</span>
                     `;
