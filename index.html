@@ -61,7 +61,7 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Columna Izquierda: Cuentas y Gráfico de Torta -->
+        <!-- Columna Izquierda: Cuentas, Lista de Resumen y Gráfico -->
         <div class="lg:col-span-5 space-y-6">
             
             <!-- Estado Financiero y Cuentas -->
@@ -91,7 +91,17 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Torta con Info Central Integrada (Cero Solapamientos) -->
+            <!-- Lista no editable de categorías con sus gastos sobre el gráfico de torta -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+                <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-tags text-emerald-400"></i> Resumen por Categoría
+                </h2>
+                <div id="listaResumenCategorias" class="space-y-2 max-h-60 overflow-y-auto pr-1 divide-y divide-slate-800/60">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Gráfico de Torta con Info Central Integrada (Cero solapamiento) -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col items-center">
                 <div class="flex justify-between items-center w-full mb-2">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
@@ -106,45 +116,9 @@
 
         </div>
 
-        <!-- Columna Derecha: Listado (Primero) y Formulario de Registro (Después) -->
+        <!-- Columna Derecha: Formulario de Registro (Primero) y Movimientos del Mes (Después) -->
         <div class="lg:col-span-7 space-y-6">
             
-            <!-- Listado de Transacciones con Ordenamiento -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
-                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
-                    </h2>
-                    <div class="flex items-center gap-2">
-                        <select id="criterioOrden" onchange="renderizarTodo()" class="bg-slate-950 text-xs text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-800 outline-none cursor-pointer">
-                            <option value="fecha">Ordenar por: Fecha</option>
-                            <option value="monto">Ordenar por: Gasto (Monto)</option>
-                            <option value="categoria">Ordenar por: Categoría</option>
-                        </select>
-                        <button onclick="borrarMesActual()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-2.5 py-1.5 rounded-lg border border-rose-500/30 flex items-center gap-1.5">
-                            <i class="fa-solid fa-trash-can"></i> Borrar Mes
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto max-h-72 overflow-y-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
-                            <tr>
-                                <th class="p-2.5">Fecha</th>
-                                <th class="p-2.5">Título</th>
-                                <th class="p-2.5">Categoría > Subcategoría</th>
-                                <th class="p-2.5 text-right">Monto</th>
-                                <th class="p-2.5 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
-                            <!-- Dinámico -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- Formulario de Transacción con Selector de Fecha -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <div class="flex justify-between items-center mb-3">
@@ -213,6 +187,42 @@
                         <i class="fa-solid fa-check"></i> Registrar Transacción
                     </button>
                 </form>
+            </div>
+
+            <!-- Listado de Transacciones con Ordenamiento (Abajo) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list text-emerald-400"></i> Movimientos del Mes
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <select id="criterioOrden" onchange="renderizarTodo()" class="bg-slate-950 text-xs text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-800 outline-none cursor-pointer">
+                            <option value="fecha">Ordenar por: Fecha</option>
+                            <option value="monto">Ordenar por: Gasto (Monto)</option>
+                            <option value="categoria">Ordenar por: Categoría</option>
+                        </select>
+                        <button onclick="borrarMesActual()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-2.5 py-1.5 rounded-lg border border-rose-500/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i> Borrar Mes
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800 sticky top-0">
+                            <tr>
+                                <th class="p-2.5">Fecha</th>
+                                <th class="p-2.5">Título</th>
+                                <th class="p-2.5">Categoría > Subcategoría</th>
+                                <th class="p-2.5 text-right">Monto</th>
+                                <th class="p-2.5 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTransacciones" class="divide-y divide-slate-800/60">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
@@ -753,6 +763,28 @@
             document.getElementById('labelIngresos').innerText = '$' + ingresosMes.toLocaleString() + ' CLP';
             document.getElementById('labelGastos').innerText = '$' + gastosMes.toLocaleString() + ' CLP';
 
+            // Renderizar la lista no editable de categorías con sus gastos sobre el gráfico (ordenada de mayor a menor gasto)
+            const listaResumenDiv = document.getElementById('listaResumenCategorias');
+            listaResumenDiv.innerHTML = '';
+            
+            const categoriasOrdenadas = Object.entries(gastosPorCategoriaMes).sort((a, b) => b[1] - a[1]);
+
+            if (categoriasOrdenadas.length === 0) {
+                listaResumenDiv.innerHTML = '<div class="p-3 text-center text-slate-500 italic text-xs">Sin gastos este mes.</div>';
+            } else {
+                categoriasOrdenadas.forEach(([catNombre, catMonto]) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = "flex justify-between items-center py-2 px-1 text-xs";
+                    itemDiv.innerHTML = `
+                        <span class="font-medium text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-circle text-[6px] text-emerald-400"></i> ${catNombre}
+                        </span>
+                        <span class="font-bold text-rose-400">-$${catMonto.toLocaleString()}</span>
+                    `;
+                    listaResumenDiv.appendChild(itemDiv);
+                });
+            }
+
             // Filtrar transacciones del mes
             let txsMes = datosApp.transacciones.filter(t => normalizarFechaIso(t.date).startsWith(mesSeleccionado));
 
@@ -827,7 +859,6 @@
 
             const colores = ['#10b981', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', '#fb7185', '#34d399', '#818cf8', '#f97316'];
 
-            // Plugin nativo para dibujar la información central sin solapamiento
             const pluginCentroDona = {
                 id: 'pluginCentroDona',
                 afterDraw(chart) {
@@ -933,9 +964,9 @@
                 dl.setAttribute("download", `mis_gastos_backup_${new Date().toISOString().slice(0,10)}.json`);
                 document.body.appendChild(dl); dl.click(); dl.remove();
             } else if (tipo === 'csv') {
-                let csv = "uuid,date,amount,category,title\\n";
+                let csv = "uuid,date,amount,category,title\n";
                 datosApp.transacciones.forEach(t => {
-                    csv += `${t.uuid || ''},${t.date},${t.amount},"${Array.isArray(t.category) ? t.category.join('>') : t.category}","${t.title || ''}"\\n`;
+                    csv += `${t.uuid || ''},${t.date},${t.amount},"${Array.isArray(t.category) ? t.category.join('>') : t.category}","${t.title || ''}"\n`;
                 });
                 const dl = document.createElement('a');
                 dl.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
@@ -966,7 +997,7 @@
                             }));
                         }
                     } else if (file.name.endsWith('.csv')) {
-                        const lineas = contenido.split('\\n');
+                        const lineas = contenido.split('\n');
                         for (let i = 1; i < lineas.length; i++) {
                             const linea = lineas[i].trim();
                             if (!linea) continue;
