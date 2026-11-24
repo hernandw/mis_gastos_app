@@ -464,64 +464,11 @@
             "Sueldo": { icon: "fa-money-bill-wave", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
             "Freelance": { icon: "fa-laptop-code", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
             "Inversiones": { icon: "fa-chart-line", color: "text-green-400 bg-green-500/10 border-green-500/20" },
-            "Otros": { icon: "fa-circle-dollar-to-slot", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" },
-            "Transferencias": { icon: "fa-right-left", color: "text-sky-400 bg-sky-500/10 border-sky-500/20" }
+            "Otros": { icon: "fa-circle-dollar-to-slot", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" }
         };
 
         function obtenerConfigCategoria(cat) {
             return configCategorias[cat] || { icon: "fa-tag", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" };
-        }
-
-        function obtenerCategoriaPrincipal(t) {
-            if (Array.isArray(t.category) && t.category.length > 0) {
-                return String(t.category[0] || 'General').trim();
-            } else if (typeof t.category === 'string' && t.category.trim()) {
-                return t.category.split('>')[0].trim();
-            }
-            return 'General';
-        }
-
-        function obtenerSubcategoria(t) {
-            if (Array.isArray(t.category) && t.category.length > 1) {
-                return String(t.category[1] || '').trim();
-            } else if (typeof t.category === 'string' && t.category.includes('>')) {
-                return t.category.split('>')[1].trim();
-            }
-            return '';
-        }
-
-        function esTransferenciaInterna(t) {
-            if (!t) return false;
-            if (typeof t.esTransferenciaInterna === 'boolean') {
-                return t.esTransferenciaInterna;
-            }
-
-            const uuid = String(t.uuid || t.id || '');
-            const titulo = String(t.title || t.comment || '').trim().toLowerCase();
-            const catPrin = obtenerCategoriaPrincipal(t).toLowerCase();
-            const subCat = obtenerSubcategoria(t).toLowerCase();
-            const catCompleta = `${catPrin} ${subCat}`.trim();
-
-            if (titulo.startsWith('retiro desde') || subCat === 'retiro') {
-                return false;
-            }
-
-            if (uuid.startsWith('tx-tr-in-') || uuid.startsWith('tx-tr-out-')) {
-                return true;
-            }
-
-            if (
-                catPrin === 'transferencias' ||
-                catPrin === 'transferencia interna' ||
-                catPrin === 'transferencias internas' ||
-                catCompleta.includes('transferencia interna') ||
-                catCompleta.includes('transferencias internas') ||
-                catCompleta.includes('entre cuentas')
-            ) {
-                return true;
-            }
-
-            return false;
         }
 
         window.onload = function() {
@@ -625,31 +572,26 @@
             if (origenId === destinoId) { alert("La cuenta de origen y destino no pueden ser la misma."); return; }
 
             const cOrigen = datosApp.cuentas.find(c => c.id === origenId);
-            const cDestino = destinoId !== 'retiro' ? datosApp.cuentas.find(c => c.id === destinoId) : null;
             const fechaActual = new Date().toISOString().slice(0, 10);
-            const esInterna = destinoId !== 'retiro';
-            const timestamp = Date.now();
 
             datosApp.transacciones.push({
-                uuid: 'tx-tr-out-' + timestamp,
+                uuid: 'tx-tr-out-' + Date.now(),
                 date: fechaActual,
                 amount: -monto,
-                category: esInterna ? ['Transferencias', 'Salida'] : ['Transferencias', 'Retiro'],
+                category: ['Transferencias', 'Salida'],
                 cuentaId: origenId,
-                title: esInterna ? `Transferencia hacia ${cDestino ? cDestino.nombre : 'otra cuenta'}` : `Retiro desde ${cOrigen.nombre}`,
-                esTransferenciaInterna: esInterna,
+                title: destinoId === 'retiro' ? `Retiro desde ${cOrigen.nombre}` : `Transferencia`,
                 status: "UNRECONCILED"
             });
 
-            if (esInterna) {
+            if (destinoId !== 'retiro') {
                 datosApp.transacciones.push({
-                    uuid: 'tx-tr-in-' + timestamp,
+                    uuid: 'tx-tr-in-' + Date.now(),
                     date: fechaActual,
                     amount: monto,
                     category: ['Transferencias', 'Entrada'],
                     cuentaId: destinoId,
                     title: `Transferencia desde ${cOrigen.nombre}`,
-                    esTransferenciaInterna: true,
                     status: "UNRECONCILED"
                 });
             }
@@ -865,17 +807,12 @@
                     currentSubCat = tx.category.split('>')[1] ? tx.category.split('>')[1].trim() : 'General';
                 }
 
-                if (!cats[currentCatPrin]) {
-                    selectPrin.appendChild(new Option(currentCatPrin, currentCatPrin));
+                if (cats[currentCatPrin]) {
+                    selectPrin.value = currentCatPrin;
                 }
-                selectPrin.value = currentCatPrin;
 
                 actualizarSelectEditSubcategorias();
-                const selectEditSub = document.getElementById('editSubcategoria');
-                if (!Array.from(selectEditSub.options).some(opt => opt.value === currentSubCat)) {
-                    selectEditSub.appendChild(new Option(currentSubCat, currentSubCat));
-                }
-                selectEditSub.value = currentSubCat;
+                document.getElementById('editSubcategoria').value = currentSubCat;
 
                 document.getElementById('modalEditarGasto').classList.remove('hidden');
                 document.getElementById('modalEditarGasto').classList.add('flex');
@@ -959,12 +896,17 @@
                 }
 
                 let fechaIso = normalizarFechaIso(t.date);
-                if (fechaIso.startsWith(mesSeleccionado) && !esTransferenciaInterna(t)) {
+                if (fechaIso.startsWith(mesSeleccionado)) {
                     if (t.amount > 0) ingresosMes += t.amount;
                     if (t.amount < 0) {
                         const valGasto = Math.abs(t.amount);
                         gastosMes += valGasto;
-                        const catPrincipal = obtenerCategoriaPrincipal(t);
+                        let catPrincipal = 'General';
+                        if (Array.isArray(t.category) && t.category.length > 0) {
+                            catPrincipal = t.category[0];
+                        } else if (typeof t.category === 'string') {
+                            catPrincipal = t.category.split('>')[0].trim();
+                        }
                         gastosPorCategoriaMes[catPrincipal] = (gastosPorCategoriaMes[catPrincipal] || 0) + valGasto;
                     }
                 }
@@ -1034,7 +976,6 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic text-xs">Sin transacciones en este mes.</td></tr>';
             } else {
                 txsMes.forEach(t => {
-                    const esTransferencia = esTransferenciaInterna(t);
                     const esIngreso = t.amount > 0;
                     let catStr = 'General';
                     if (Array.isArray(t.category)) {
@@ -1043,20 +984,13 @@
                         catStr = t.category;
                     }
                     const tituloTx = t.title || t.comment || 'Transacción';
-                    const badgeClass = esTransferencia
-                        ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded'
-                        : 'bg-slate-800 px-2 py-0.5 rounded';
-                    const montoClass = esTransferencia
-                        ? 'text-sky-400'
-                        : (esIngreso ? 'text-emerald-400' : 'text-rose-400');
-                    const signoMonto = esTransferencia ? (esIngreso ? '+' : '-') : (esIngreso ? '+' : '');
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-800/40 hover:bg-slate-950/40 text-xs";
                     tr.innerHTML = `
                         <td class="p-2.5 text-slate-400">${t.date}</td>
                         <td class="p-2.5 font-medium text-white">${tituloTx}</td>
-                        <td class="p-2.5 text-slate-400"><span class="${badgeClass}">${esTransferencia ? '<i class="fa-solid fa-right-left mr-1"></i>' : ''}${catStr}</span></td>
-                        <td class="p-2.5 text-right font-bold ${montoClass}">${signoMonto}$${Math.abs(t.amount).toLocaleString()}</td>
+                        <td class="p-2.5 text-slate-400"><span class="bg-slate-800 px-2 py-0.5 rounded">${catStr}</span></td>
+                        <td class="p-2.5 text-right font-bold ${esIngreso ? 'text-emerald-400' : 'text-rose-400'}">${esIngreso ? '+' : ''}$${Math.abs(t.amount).toLocaleString()}</td>
                         <td class="p-2.5 text-center flex justify-center gap-2">
                             <button onclick="abrirModalEditar('${t.uuid || t.id}')" class="text-slate-400 hover:text-emerald-400" title="Editar"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="eliminarTransaccion('${t.uuid || t.id}')" class="text-slate-400 hover:text-rose-400" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
@@ -1217,16 +1151,14 @@
 
                     if (file.name.endsWith('.json')) {
                         const parsed = JSON.parse(contenido);
-                        const rawTxs = parsed.transactions || parsed.transacciones || parsed;
+                        const rawTxs = parsed.transactions || parsed;
                         if (Array.isArray(rawTxs)) {
                             nuevasTxs = rawTxs.map(t => ({
                                 uuid: t.uuid || ('json-' + Math.random()),
                                 date: t.date || '2026-11-01',
                                 amount: t.amount !== undefined ? t.amount : (t.gasto ? -Math.abs(t.gasto) : (t.ingreso || 0)),
                                 category: Array.isArray(t.category) ? t.category : (t.category ? t.category.split('>') : ['General', 'General']),
-                                title: t.comment || t.title || t.notes || 'Transacción',
-                                ...(t.cuentaId ? { cuentaId: t.cuentaId } : {}),
-                                ...(typeof t.esTransferenciaInterna === 'boolean' ? { esTransferenciaInterna: t.esTransferenciaInterna } : {})
+                                title: t.comment || t.title || t.notes || 'Transacción'
                             }));
                         }
                     } else if (file.name.endsWith('.csv')) {
